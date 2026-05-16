@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using TMPro;
 using System.Collections;
 using UnityEngine.SceneManagement;
@@ -61,15 +61,26 @@ public class CarController : MonoBehaviour
         }
     }
 
-    void OnTriggerEnter(Collider other)
+void OnTriggerEnter(Collider other)
     {
         // Finish trigger
         if (other.CompareTag("Finish") && !isFinished)
         {
-            isFinished = true;
-            ShowWinScreen();
+            LevelManager lm = FindObjectOfType<LevelManager>();
+
+            // Chỉ win khi hoàn thành cả 2 checkpoint
+            if (lm != null && lm.AllCheckpointsCompleted())
+            {
+                isFinished = true;
+                ShowWinScreen();
+            }
+            else
+            {
+                Debug.Log("Bạn chưa hoàn thành đủ checkpoint!");
+            }
         }
     }
+
 
     void ShowWinScreen()
     {
