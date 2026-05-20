@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 using TMPro; // ĐỒNG BỘ: Thêm dòng này để code hiểu được TextMeshPro
 
@@ -6,15 +6,22 @@ public class AdvancedCarController : MonoBehaviour
 {
     public enum GearState { P, R, N, D }
     public int score = 100; // Hoặc public int point = 100;
+    private bool isGameOver = false; // Biến kiểm tra xem đã thua chưa
 
     [Header("Hộp Số (Gear System)")]
     public GearState currentGear = GearState.P;
     public TextMeshProUGUI gearUIText; // Ô trống để kéo chữ UI vào
-    public TextMeshProUGUI scoreText; 
-   
+    public TextMeshProUGUI scoreText;
+
+    [Header("Hệ thống Đích (Finish System)")]
+    public TextMeshProUGUI finishUIText; // Ô trống để kéo chữ UI "HOÀN THÀNH LEVEL" vào
+
+    [Header("Giao diện Thua/Thắng")]
+    public GameObject restartButtonObject; // Ô trống để kéo thả Nút Restart vào
+
 
     [Header("Thông số xe (Car Settings)")]
-    public float motorForce = 7000f;   
+    public float motorForce = 7000f;
     public float brakeForce = 3000f;
     public float maxSteerAngle = 30f;
 
@@ -43,23 +50,34 @@ public class AdvancedCarController : MonoBehaviour
             scoreText.text = "Điểm: " + score.ToString();
         }
         // --- ĐOẠN CODE KIỂM TRA GAME OVER KHI ĐIỂM VỀ 0 ---
-        if (score <= 0)
+        if (score <= 0 && !isGameOver)
         {
-            score = 0; // Khóa điểm không cho tụt xuống số âm (như -10, -20)
+            isGameOver = true; // Đánh dấu đã Game Over để không chạy lại đoạn này nữa
+            score = 0;
 
-            // Cách 1: Hiện chữ THẤT BẠI to đùng lên màn hình thông báo
+            // 1. Hiện chữ THẤT BẠI
             TrafficSystem traffic = FindFirstObjectByType<TrafficSystem>();
             if (traffic != null && traffic.warningText != null)
             {
-                traffic.warningText.text = "GAME OVER: Bạn đã bị trừ hết điểm !";
+                traffic.warningText.text = "GAME OVER: Bạn đã bị trừ hết điểm!";
                 traffic.warningText.color = Color.red;
             }
 
-            // Cách 2 (Nâng cao): Gọi màn hình Reset lại Level hoặc hiện Panel Game Over
-            // Để đóng băng chiếc xe không cho chạy tiếp khi thua cuộc:
-            Time.timeScale = 0f; // Dừng toàn bộ thời gian vật lý trong game lại
+            // 2. Ép cập nhật lại chữ UI điểm số lần cuối
+            if (scoreText != null)
+            {
+                scoreText.text = "Điểm: 0";
+            }
 
-            Debug.LogError("GAME OVER: Điểm số đã về 0!");
+            // 3. BẬT NÚT RESTART LÊN TRƯỚC
+            if (restartButtonObject != null)
+            {
+                restartButtonObject.SetActive(true);
+                Debug.Log("Đã gọi lệnh bật nút Restart!");
+            }
+
+            // 4. ĐÓNG BĂNG THỜI GIAN SAU CÙNG
+            Time.timeScale = 0f;
         }
     }
 
@@ -132,5 +150,35 @@ public class AdvancedCarController : MonoBehaviour
         if (currentGear == GearState.D) currentGear = GearState.N;
         else if (currentGear == GearState.N) currentGear = GearState.R;
         else if (currentGear == GearState.R) currentGear = GearState.P;
+    }
+    // HÀM TỰ ĐỘNG CHẠY KHI XE ĐÂM XUYÊN QUA CÁC VÙNG TRIGGER
+    void OnTriggerEnter(Collider other)
+    {
+        // Kiểm tra xem vật thể xe vừa đâm vào có phải là Đích (Tag: Finish) hay không
+        if (other.CompareTag("Finish"))
+        {
+            Debug.Log("CHÚC MỪNG: Bạn đã về đích thành công!");
+
+            // 1. Hiển thị chữ Hoàn thành lên màn hình chính
+            if (finishUIText != null)
+            {
+                finishUIText.text = "CHÚC MỪNG!\nHOÀN THÀNH LEVEL 3";
+                finishUIText.color = Color.green; // Chữ màu xanh lá tươi vui
+            }
+
+            // 2. Đóng băng game lại (hoặc bạn có thể cho chuyển cảnh sau 3 giây)
+            Time.timeScale = 0f;
+        }
+    }
+
+    public void RestartGame()
+    {
+        Debug.Log("Restart pressed");
+
+        Time.timeScale = 1f;
+
+        SceneManager.LoadScene(
+            SceneManager.GetActiveScene().buildIndex
+        );
     }
 }
