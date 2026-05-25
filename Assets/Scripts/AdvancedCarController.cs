@@ -1,24 +1,27 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using TMPro; // ĐỒNG BỘ: Thêm dòng này để code hiểu được TextMeshPro
+using TMPro;
 
 public class AdvancedCarController : MonoBehaviour
 {
     public enum GearState { P, R, N, D }
-    public int score = 100; // Hoặc public int point = 100;
-    private bool isGameOver = false; // Biến kiểm tra xem đã thua chưa
+
+    [Header("Gameplay")]
+    public int score = 100;
+    private bool isGameOver = false;
+    public TMP_Text speedText;
+    private Vector3 lastPosition;
 
     [Header("Hộp Số (Gear System)")]
     public GearState currentGear = GearState.P;
-    public TextMeshProUGUI gearUIText; // Ô trống để kéo chữ UI vào
+    public TextMeshProUGUI gearUIText;
     public TextMeshProUGUI scoreText;
 
     [Header("Hệ thống Đích (Finish System)")]
-    public TextMeshProUGUI finishUIText; // Ô trống để kéo chữ UI "HOÀN THÀNH LEVEL" vào
+    public TextMeshProUGUI finishUIText;
 
     [Header("Giao diện Thua/Thắng")]
-    public GameObject restartButtonObject; // Ô trống để kéo thả Nút Restart vào
-
+    public GameObject restartButtonObject;
 
     [Header("Thông số xe (Car Settings)")]
     public float motorForce = 7000f;
@@ -32,58 +35,71 @@ public class AdvancedCarController : MonoBehaviour
     public WheelCollider rearRightWheel;
 
     private float currentSpeed;
+    private Rigidbody carRigidbody;
+
+    void Start()
+    {
+        lastPosition = transform.position;
+        carRigidbody = GetComponent<Rigidbody>();
+        if (restartButtonObject != null)
+            restartButtonObject.SetActive(false);
+
+        Time.timeScale = 1f;
+    }
 
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.E)) ShiftGearUp();
         if (Input.GetKeyDown(KeyCode.Q)) ShiftGearDown();
 
-        // Cập nhật chữ hiển thị trên màn hình game
         if (gearUIText != null)
-        {
             gearUIText.text = "GEAR: " + currentGear.ToString();
-        }
-        // Đoạn này ép chữ UI điểm số luôn luôn chạy theo giá trị thực của biến score
-        // (Bạn hãy thay 'scoreText' thành ĐÚNG tên biến TextMeshPro hiển thị điểm trên xe của bạn nhé)
+
         if (scoreText != null)
-        {
             scoreText.text = "Điểm: " + score.ToString();
-        }
-        // --- ĐOẠN CODE KIỂM TRA GAME OVER KHI ĐIỂM VỀ 0 ---
+
         if (score <= 0 && !isGameOver)
         {
-            isGameOver = true; // Đánh dấu đã Game Over để không chạy lại đoạn này nữa
+            isGameOver = true;
             score = 0;
 
-            // 1. Hiện chữ THẤT BẠI
-            TrafficSystem traffic = FindFirstObjectByType<TrafficSystem>();
+            TrafficSystem traffic = FindObjectOfType<TrafficSystem>();
             if (traffic != null && traffic.warningText != null)
             {
                 traffic.warningText.text = "GAME OVER: Bạn đã bị trừ hết điểm!";
                 traffic.warningText.color = Color.red;
             }
 
-            // 2. Ép cập nhật lại chữ UI điểm số lần cuối
             if (scoreText != null)
-            {
                 scoreText.text = "Điểm: 0";
-            }
 
-            // 3. BẬT NÚT RESTART LÊN TRƯỚC
             if (restartButtonObject != null)
             {
                 restartButtonObject.SetActive(true);
                 Debug.Log("Đã gọi lệnh bật nút Restart!");
             }
 
-            // 4. ĐÓNG BĂNG THỜI GIAN SAU CÙNG
             Time.timeScale = 0f;
+        }
+
+        // Speed display (meters moved since last frame -> m/s -> km/h)
+        if (speedText != null)
+        {
+            float distanceMoved = Vector3.Distance(transform.position, lastPosition);
+            float speedMS = (Time.deltaTime > 0f) ? (distanceMoved / Time.deltaTime) : 0f;
+            float currentSpeedKMH = speedMS * 3.6f;
+
+            if (Time.timeScale == 0f || currentSpeedKMH < 0.5f)
+                currentSpeedKMH = 0f;
+
+            speedText.text = "Speed: " + currentSpeedKMH.ToString("F0") + " km/h";
+            lastPosition = transform.position;
         }
     }
 
     void FixedUpdate()
     {
-        Rigidbody rb = GetComponent<Rigidbody>();
+        Rigidbody rb = carRigidbody != null ? carRigidbody : GetComponent<Rigidbody>();
         if (rb != null) currentSpeed = rb.linearVelocity.magnitude * 3.6f;
 
         HandleMotor();
@@ -92,6 +108,7 @@ public class AdvancedCarController : MonoBehaviour
 
     void HandleMotor()
     {
+        // Basic gear-based motor/brake decision, then refined with input
         float motorInput = 0f;
         float brakeInput = 0f;
 
@@ -121,21 +138,59 @@ public class AdvancedCarController : MonoBehaviour
                 break;
         }
 
-        rearLeftWheel.motorTorque = motorInput;
-        rearRightWheel.motorTorque = motorInput;
+        // More refined input-based motor/brake handling
+        float gasPedal = Input.GetAxis("Vertical"); // -1..1
+        Vector3 rbVelocity = carRigidbody != null ? carRigidbody.linearVelocity : Vector3.zero;
+        float forwardSpeed = Vector3.Dot(rbVelocity, transform.forward);
 
-        frontLeftWheel.brakeTorque = brakeInput;
-        frontRightWheel.brakeTorque = brakeInput;
-        rearLeftWheel.brakeTorque = brakeInput;
-        rearRightWheel.brakeTorque = brakeInput;
+        float motor = 0f;
+        float brake = 0f;
+
+        if (Mathf.Abs(gasPedal) < 0.05f)
+        {
+            motor = 0f;
+            brake = 500f; // small hold brake to prevent roll
+        }
+        else if (gasPedal > 0f)
+        {
+            motor = gasPedal * motorForce;
+            brake = 0f;
+        }
+        else // gasPedal < 0
+        {
+            if (forwardSpeed > 0.5f)
+            {
+                motor = 0f;
+                brake = brakeForce; // emergency braking when pressing S while moving forward
+            }
+            else
+            {
+                motor = gasPedal * motorForce; // reverse torque
+                brake = 0f;
+            }
+        }
+
+        // Combine gear decisions and refined decisions: prefer refined values when non-zero
+        float appliedMotor = (Mathf.Abs(motor) > 0f) ? motor : motorInput;
+        float appliedBrake = (Mathf.Abs(brake) > 0f) ? brake : brakeInput;
+
+        if (frontLeftWheel != null) frontLeftWheel.motorTorque = appliedMotor;
+        if (frontRightWheel != null) frontRightWheel.motorTorque = appliedMotor;
+        if (rearLeftWheel != null) rearLeftWheel.motorTorque = appliedMotor;
+        if (rearRightWheel != null) rearRightWheel.motorTorque = appliedMotor;
+
+        if (frontLeftWheel != null) frontLeftWheel.brakeTorque = appliedBrake;
+        if (frontRightWheel != null) frontRightWheel.brakeTorque = appliedBrake;
+        if (rearLeftWheel != null) rearLeftWheel.brakeTorque = appliedBrake;
+        if (rearRightWheel != null) rearRightWheel.brakeTorque = appliedBrake;
     }
 
     void HandleSteering()
     {
         float steerInput = Input.GetAxis("Horizontal");
         float steerAngle = steerInput * maxSteerAngle;
-        frontLeftWheel.steerAngle = steerAngle;
-        frontRightWheel.steerAngle = steerAngle;
+        if (frontLeftWheel != null) frontLeftWheel.steerAngle = steerAngle;
+        if (frontRightWheel != null) frontRightWheel.steerAngle = steerAngle;
     }
 
     void ShiftGearUp()
@@ -151,22 +206,20 @@ public class AdvancedCarController : MonoBehaviour
         else if (currentGear == GearState.N) currentGear = GearState.R;
         else if (currentGear == GearState.R) currentGear = GearState.P;
     }
-    // HÀM TỰ ĐỘNG CHẠY KHI XE ĐÂM XUYÊN QUA CÁC VÙNG TRIGGER
+
+    // Trigger for finish
     void OnTriggerEnter(Collider other)
     {
-        // Kiểm tra xem vật thể xe vừa đâm vào có phải là Đích (Tag: Finish) hay không
         if (other.CompareTag("Finish"))
         {
             Debug.Log("CHÚC MỪNG: Bạn đã về đích thành công!");
 
-            // 1. Hiển thị chữ Hoàn thành lên màn hình chính
             if (finishUIText != null)
             {
                 finishUIText.text = "CHÚC MỪNG!\nHOÀN THÀNH LEVEL 3";
-                finishUIText.color = Color.green; // Chữ màu xanh lá tươi vui
+                finishUIText.color = Color.green;
             }
 
-            // 2. Đóng băng game lại (hoặc bạn có thể cho chuyển cảnh sau 3 giây)
             Time.timeScale = 0f;
         }
     }
@@ -174,11 +227,7 @@ public class AdvancedCarController : MonoBehaviour
     public void RestartGame()
     {
         Debug.Log("Restart pressed");
-
         Time.timeScale = 1f;
-
-        SceneManager.LoadScene(
-            SceneManager.GetActiveScene().buildIndex
-        );
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 }
