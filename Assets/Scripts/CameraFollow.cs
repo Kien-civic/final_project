@@ -1,19 +1,31 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 public class CameraFollow : MonoBehaviour
 {
-    public Transform target; // Kéo Playcar vào đây
-    public float height = 15f; // Độ cao của camera
+    public Transform target;
+
+    public float height = 8f;
+    public float distance = 10f;
+    public float smoothSpeed = 5f;
 
     void LateUpdate()
     {
-        if (target != null)
-        {
-            // Camera luôn ở vị trí của xe nhưng cộng thêm độ cao Y
-            transform.position = new Vector3(target.position.x, height, target.position.z);
-            
-            // Luôn nhìn thẳng xuống mặt đất
-            transform.rotation = Quaternion.Euler(90f, 0f, 0f);
-        }
+        if (target == null) return;
+
+        // Vị trí phía sau xe
+        Vector3 desiredPosition =
+            target.position
+            - target.forward * distance
+            + Vector3.up * height;
+
+        // Camera di chuyển mượt
+        transform.position = Vector3.Lerp(
+            transform.position,
+            desiredPosition,
+            smoothSpeed * Time.deltaTime
+        );
+
+        // Camera nhìn vào xe
+        transform.LookAt(target);
     }
 }
