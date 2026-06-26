@@ -1,9 +1,14 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI; // Đã thêm: Giúp hỗ trợ các thành phần UI cơ bản
 using TMPro;
+using System.Collections;
 
 public class AdvancedCarController : MonoBehaviour
 {
+    [Header("UI Panels Settings")]
+    public GameObject finishPanel; // Khung chứa bảng Thắng (Finish)
+
     public enum GearState { P, R, N, D }
 
     [Header("Gameplay")]
@@ -18,10 +23,10 @@ public class AdvancedCarController : MonoBehaviour
     public TextMeshProUGUI scoreText;
 
     [Header("Hệ thống Đích (Finish System)")]
-    public TextMeshProUGUI finishUIText;
+    public TextMeshProUGUI finishUIText; // ĐÃ GIỮ LẠI DUY NHẤT: Biến TextMeshProUGUI không còn bị trùng tên
 
     [Header("Giao diện Thua/Thắng")]
-    public GameObject restartButtonObject;
+    public GameObject restartButtonObject; // Ô kéo thả nút Báo Thua (Repeat) hoặc Lose Panel
 
     [Header("Thông số xe (Car Settings)")]
     public float motorForce = 7000f;
@@ -45,12 +50,27 @@ public class AdvancedCarController : MonoBehaviour
             restartButtonObject.SetActive(false);
 
         Time.timeScale = 1f;
+
+        // LẤY RA CHỈ SỐ INDEX CỦA MÀN CHƠI HIỆN TẠI VÀ LƯU VÀO MÁY
+        int currentSceneIndex = UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex;
+
+        // Chỉ lưu nếu màn chơi đó lớn hơn màn Chọn màn (LevelSelect) và MainMenu
+        if (currentSceneIndex >= 2)
+        {
+            PlayerPrefs.SetInt("SavedLevelIndex", currentSceneIndex);
+            PlayerPrefs.Save(); // Khóa dữ liệu vào ổ cứng của thiết bị
+            Debug.Log("-> [BACKEND] Đã tự động lưu tiến trình chơi: Level Index " + currentSceneIndex);
+        }
     }
 
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.E)) ShiftGearUp();
         if (Input.GetKeyDown(KeyCode.Q)) ShiftGearDown();
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            RestartGame();
+        }
 
         if (gearUIText != null)
             gearUIText.text = "GEAR: " + currentGear.ToString();
@@ -108,7 +128,6 @@ public class AdvancedCarController : MonoBehaviour
 
     void HandleMotor()
     {
-        // Basic gear-based motor/brake decision, then refined with input
         float motorInput = 0f;
         float brakeInput = 0f;
 
@@ -117,72 +136,69 @@ public class AdvancedCarController : MonoBehaviour
 
         switch (currentGear)
         {
+            // PARK
             case GearState.P:
                 motorInput = 0f;
                 brakeInput = brakeForce;
                 break;
 
+            // NEUTRAL
             case GearState.N:
                 motorInput = 0f;
-                if (isPressingBrake) brakeInput = brakeForce;
+
+                if (isPressingBrake)
+                    brakeInput = brakeForce;
+
                 break;
 
+            // DRIVE
             case GearState.D:
-                if (isPressingGas) { motorInput = motorForce; brakeInput = 0f; }
-                if (isPressingBrake) { motorInput = 0f; brakeInput = brakeForce; }
+
+                // W = đi tới
+                if (isPressingGas)
+                {
+                    motorInput = motorForce;
+                    brakeInput = 0f;
+                }
+
+                // S = phanh
+                if (isPressingBrake)
+                {
+                    motorInput = 0f;
+                    brakeInput = brakeForce;
+                }
+
                 break;
 
+            // REVERSE
             case GearState.R:
-                if (isPressingGas) { motorInput = -motorForce; brakeInput = 0f; }
-                if (isPressingBrake) { motorInput = 0f; brakeInput = brakeForce; }
+
+                // W = lùi xe
+                if (isPressingGas)
+                {
+                    motorInput = -motorForce;
+                    brakeInput = 0f;
+                }
+
+                // S = phanh
+                if (isPressingBrake)
+                {
+                    motorInput = 0f;
+                    brakeInput = brakeForce;
+                }
+
                 break;
         }
 
-        // More refined input-based motor/brake handling
-        float gasPedal = Input.GetAxis("Vertical"); // -1..1
-        Vector3 rbVelocity = carRigidbody != null ? carRigidbody.linearVelocity : Vector3.zero;
-        float forwardSpeed = Vector3.Dot(rbVelocity, transform.forward);
+        // Chỉ truyền lực cho bánh sau
+        rearLeftWheel.motorTorque = motorInput;
+        rearRightWheel.motorTorque = motorInput;
 
-        float motor = 0f;
-        float brake = 0f;
-
-        if (Mathf.Abs(gasPedal) < 0.05f)
-        {
-            motor = 0f;
-            brake = 500f; // small hold brake to prevent roll
-        }
-        else if (gasPedal > 0f)
-        {
-            motor = gasPedal * motorForce;
-            brake = 0f;
-        }
-        else // gasPedal < 0
-        {
-            if (forwardSpeed > 0.5f)
-            {
-                motor = 0f;
-                brake = brakeForce; // emergency braking when pressing S while moving forward
-            }
-            else
-            {
-                motor = gasPedal * motorForce; // reverse torque
-                brake = 0f;
-            }
-        }
-
-        // Combine gear decisions and refined decisions: prefer refined values when non-zero
-        float appliedMotor = (Mathf.Abs(motor) > 0f) ? motor : motorInput;
-        float appliedBrake = (Mathf.Abs(brake) > 0f) ? brake : brakeInput;
-
-        if (frontLeftWheel != null) frontLeftWheel.motorTorque = appliedMotor;
-        if (frontRightWheel != null) frontRightWheel.motorTorque = appliedMotor;
-        if (rearLeftWheel != null) rearLeftWheel.motorTorque = appliedMotor;
-        if (rearRightWheel != null) rearRightWheel.motorTorque = appliedMotor;
-
-        if (frontLeftWheel != null) frontLeftWheel.brakeTorque = appliedBrake;
-        if (frontRightWheel != null) frontRightWheel.brakeTorque = appliedBrake;
-        if (rearLeftWheel != null) rearLeftWheel.brakeTorque = appliedBrake;
-        if (rearRightWheel != null) rearRightWheel.brakeTorque = appliedBrake;
+        // Phanh cả 4 bánh
+        frontLeftWheel.brakeTorque = brakeInput;
+        frontRightWheel.brakeTorque = brakeInput;
+        rearLeftWheel.brakeTorque = brakeInput;
+        rearRightWheel.brakeTorque = brakeInput;
     }
 
     void HandleSteering()
@@ -216,18 +232,49 @@ public class AdvancedCarController : MonoBehaviour
 
             if (finishUIText != null)
             {
-                finishUIText.text = "CHÚC MỪNG!\nHOÀN THÀNH LEVEL 3";
+                int currentLevel = SceneManager.GetActiveScene().buildIndex - 1;
+                finishUIText.text = "CHÚC MỪNG!\nHOÀN THÀNH LEVEL ";
                 finishUIText.color = Color.green;
+            }
+
+            if (finishPanel != null)
+            {
+                finishPanel.SetActive(true);
             }
 
             Time.timeScale = 0f;
         }
     }
 
-    public void RestartGame()
+    // --- CÁC HÀM DÀNH CHO NÚT BẤM ---
+
+    public void ClickRepeat()
     {
-        Debug.Log("Restart pressed");
         Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+
+    public void ClickNextLevel()
+    {
+        Time.timeScale = 1f;
+        int nextSceneIndex = SceneManager.GetActiveScene().buildIndex + 1;
+
+        if (nextSceneIndex < SceneManager.sceneCountInBuildSettings)
+        {
+            SceneManager.LoadScene(nextSceneIndex);
+        }
+        else
+        {
+            Debug.Log("Đã hết Level! Quay lại Menu chính.");
+            SceneManager.LoadScene(0);
+        }
+    }
+
+    public void RestartGame()
+    {
+        Debug.Log("RESTART BUTTON CLICKED - LOADING SCENE...");
+        Time.timeScale = 1f;
+        Scene currentScene = SceneManager.GetActiveScene();
+        SceneManager.LoadScene(currentScene.buildIndex);
     }
 }
