@@ -1,9 +1,14 @@
 ﻿using UnityEngine;
 using TMPro;
+using System.Collections;
 
 public class TrafficSystem : MonoBehaviour
 {
+    // --- KHỞI TẠO THƯ VIỆN SINGLETON (BỘ QUẢN LÝ TẬP TRUNG) ---
+    public static TrafficSystem Instance { get; private set; }
+
     public enum LightColor { Green, Yellow, Red }
+
     [Header("Trạng thái Đèn")]
     public LightColor currentLight = LightColor.Green;
 
@@ -13,23 +18,48 @@ public class TrafficSystem : MonoBehaviour
     public float redDuration = 7f;
 
     [Header("Liên kết mô hình Đèn thực tế")]
-    public GameObject greenLampObject;  // Kéo khối cầu đèn Xanh vào đây
-    public GameObject yellowLampObject; // Kéo khối cầu đèn Vàng vào đây
-    public GameObject redLampObject;    // Kéo khối cầu đèn Đỏ vào đây
+    public GameObject greenLampObject;
+    public GameObject yellowLampObject;
+    public GameObject redLampObject;
 
-    [Header("Liên kết UI hiển thị lỗi")]
-    public TextMeshProUGUI warningText; 
-    public TextMeshProUGUI scoreUIText; // Ô trống để kéo chữ UI "Điểm: 100" vào
-    private int playerScore = 100;      // Biến lưu điểm số thực tế ban đầu là 100
+    [Header("Liên kết UI hiển thị (Kéo thả từ Canvas của Level hiện tại)")]
+    public TextMeshProUGUI warningText;
+    public TextMeshProUGUI scoreUIText;
 
     private float timer;
+    private Coroutine clearTextCoroutine;
+    private string lastMessage = "";
+    private bool isCountdownRunning = false;
+
+    void Awake()
+    {
+        // Thiết lập cấu trúc thư viện quản lý tập trung độc nhất
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else if (Instance != this)
+        {
+            // Tránh việc có nhiều bộ TrafficSystem đá nhau trong một Scene
+            Destroy(gameObject);
+            return;
+        }
+    }
 
     void Start()
     {
         currentLight = LightColor.Green;
         timer = greenDuration;
-        UpdateVisualLights(); // Cập nhật đèn lúc bắt đầu
-        if (warningText != null) warningText.text = ""; 
+        UpdateVisualLights();
+
+        // Tự động đi tìm ô chữ Warning trên màn hình nếu quên chưa kéo thả
+        if (warningText == null)
+        {
+            GameObject warningObj = GameObject.Find("WarningUIText");
+            if (warningObj != null) warningText = warningObj.GetComponent<TextMeshProUGUI>();
+        }
+
+        if (warningText != null) warningText.text = "";
     }
 
     void Update()
@@ -57,58 +87,73 @@ public class TrafficSystem : MonoBehaviour
         {
             currentLight = LightColor.Green;
             timer = greenDuration;
-            if (warningText != null) warningText.text = ""; 
         }
 
-        UpdateVisualLights(); // Mỗi lần đổi trạng thái thì bật/tắt đèn tương ứng
+        UpdateVisualLights();
     }
 
-    // HÀM TỰ ĐỘNG BẬT ĐÈN ĐÚNG MÀU VÀ TẮT ĐÈN SAI MÀU
     void UpdateVisualLights()
     {
         if (greenLampObject != null) greenLampObject.SetActive(currentLight == LightColor.Green);
         if (yellowLampObject != null) yellowLampObject.SetActive(currentLight == LightColor.Yellow);
         if (redLampObject != null) redLampObject.SetActive(currentLight == LightColor.Red);
     }
-
-public void CheckVehicleViolation(Collider other)
+    // ĐÃ THÊM LẠI: Hàm này giúp sửa triệt để lỗi CS1061 ở script TriggerZone
+    public void CheckVehicleViolation(Collider other)
     {
-        if (other.CompareTag("Player")) 
+        if (other.CompareTag("Player"))
         {
             if (currentLight == LightColor.Red)
             {
-                Debug.LogWarning("VI PHẠM: Bạn đã vượt đèn đỏ!");
-                
-                // 1. Hiển thị chữ báo lỗi lên màn hình chính
-                if (warningText != null)
-                {
-                    warningText.text = "VI PHẠM: Vượt đèn đỏ! Trừ 50 điểm";
-                    warningText.color = Color.red;
-                }
+                Debug.LogWarning("-> [CONSOLE] Phát hiện xe vượt đèn đỏ qua TriggerZone!");
 
-                // 2. --- LOGIC KẾT NỐI SANG SCRIPT TRÊN XE ĐỂ TRỪ ĐIỂM ---
-                // Tìm thành phần script điều khiển xe nằm trên vật thể vừa đâm vào Trigger
+                // Gọi lệnh hiển thị chữ đỏ rực lên màn hình chính thông qua Singleton
+                ShowNotification("VI PHẠM: Vượt đèn đỏ! Trừ 50 điểm", Color.red);
+
+                // Tiến hành trừ điểm trực tiếp trên xe
                 AdvancedCarController carScript = other.GetComponent<AdvancedCarController>();
-                
-                // Nếu không tìm thấy tên AdvancedCarController, thử tìm theo tên CarController cũ
-                if (carScript == null)
-                {
-                    // Bạn kiểm tra xem script trên xe ở Level 3 tên là gì nhé. 
-                    // Nếu dùng file cũ thì bật dòng dưới này lên bằng cách xóa 2 dấu gạch chéo:
-                    // CarController carScriptOld = other.GetComponent<CarController>();
-                }
-
                 if (carScript != null)
                 {
-                    // Giả sử trong script xe của bạn có biến chứa điểm tên là 'score' hoặc 'point'
-                    // Ở đây mình ví dụ biến tên là 'score'. Bạn sửa lại cho đúng tên biến trong code xe của bạn nhé.
-                    carScript.score -= 50; 
-
-                    // Gọi hàm cập nhật lại chữ hiển thị điểm số trên màn hình của script xe (nếu có)
-                    // Hoặc nếu script xe tự cập nhật điểm ở hàm Update() thì dòng này không cần thiết.
-                    //carScript.UpdateScoreUI(); 
+                    carScript.score -= 50;
                 }
             }
+        }
+    }
+
+
+    // HÀM HIỂN THỊ THÔNG BÁO CHUẨN - CHỐNG NUỐT CHỮ TUYỆT ĐỐI
+    public void ShowNotification(string message, Color color)
+    {
+        if (warningText != null)
+        {
+            if (isCountdownRunning && lastMessage == message)
+            {
+                return;
+            }
+
+            warningText.text = message;
+            warningText.color = color;
+            lastMessage = message;
+
+            if (clearTextCoroutine != null)
+            {
+                StopCoroutine(clearTextCoroutine);
+            }
+
+            isCountdownRunning = true;
+            clearTextCoroutine = StartCoroutine(ClearTextAfterDelay(3f));
+        }
+    }
+
+    private IEnumerator ClearTextAfterDelay(float delay)
+    {
+        yield return new WaitForSecondsRealtime(delay);
+
+        if (warningText != null)
+        {
+            warningText.text = "";
+            lastMessage = "";
+            isCountdownRunning = false;
         }
     }
 }
