@@ -1,45 +1,91 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using TMPro; // Bắt buộc thêm thư viện này để điều khiển chữ trên nút Music
 
 public class MainMenu : MonoBehaviour
 {
+    [Header("Giao diện Panels")]
+    public GameObject howToPlayPanel;
+    public GameObject settingsPanel; // Kéo SettingsPanel vào đây
+
+    [Header("Cấu hình Âm thanh (Audio)")]
+    public AudioSource bgmAudioSource;       // Kéo AudioManager (có AudioSource) vào đây
+    public TextMeshProUGUI musicButtonText;  // Kéo ô Text (TMP) của nút nhạc vào đây
+
+    private bool isMusicOn = true; // Trạng thái nhạc hiện tại
+
+    void Start()
+    {
+        // Ẩn các bảng khi vừa vào game
+        if (howToPlayPanel != null) howToPlayPanel.SetActive(false);
+        if (settingsPanel != null) settingsPanel.SetActive(false);
+
+        // ĐỌC DỮ LIỆU ĐÃ LƯU: Kiểm tra xem người chơi trước đó tắt hay bật nhạc
+        if (PlayerPrefs.HasKey("MusicMuted"))
+        {
+            // Nếu giá trị là 1 tức là đã tắt (Mute), ngược lại là bật
+            isMusicOn = PlayerPrefs.GetInt("MusicMuted") == 0;
+        }
+
+        // Áp dụng trạng thái nhạc ngay khi khởi động
+        ApplyMusicState();
+    }
+
     public void PlayGame()
     {
-        // 1. Kiểm tra xem trong bộ nhớ máy đã từng lưu khóa "SavedLevelIndex" chưa
         if (PlayerPrefs.HasKey("SavedLevelIndex"))
         {
-            // Lấy ra index đã lưu
-            int savedLevel = PlayerPrefs.GetInt("SavedLevelIndex");
-
-            Debug.Log("-> [BACKEND] Tìm thấy tiến trình chơi cũ! Đang tải Level Index: " + savedLevel);
-
-            // Tải chính xác Level vừa thoát ra
-            SceneManager.LoadScene(savedLevel);
+            SceneManager.LoadScene(PlayerPrefs.GetInt("SavedLevelIndex"));
         }
         else
         {
-            // 2. Nếu người chơi mới tinh, chưa từng chơi màn nào, mặc định nạp Level 1 (Index của Level 1 thường là 2)
-            Debug.Log("-> Chơi lần đầu, nạp mặc định Level 1");
-
-            SceneManager.LoadScene("Level1"); // Hoặc dùng số index: SceneManager.LoadScene(2);
+            SceneManager.LoadScene("Level1");
         }
     }
 
-    public void OpenLevels()
+    // --- MỤC HƯỚNG DẪN CHƠI (HOW TO PLAY) ---
+    public void OpenHowToPlay() { if (howToPlayPanel != null) howToPlayPanel.SetActive(true); }
+    public void CloseHowToPlay() { if (howToPlayPanel != null) howToPlayPanel.SetActive(false); }
+
+    // --- MỤC CÀI ĐẶT (SETTINGS) ---
+    public void OpenSettings()
     {
-        SceneManager.LoadScene("LevelSelect");
+        if (settingsPanel != null) settingsPanel.SetActive(true);
     }
 
-    public void QuitGame()
+    public void CloseSettings()
     {
-        Application.Quit();
-        Debug.Log("Thoát game");
+        if (settingsPanel != null) settingsPanel.SetActive(false);
     }
 
-    // MẸO NHỎ (Tùy chọn): Tạo thêm một nút "Xóa tiến trình" nếu muốn người chơi chơi lại từ đầu
-    public void ResetProgress()
+    // --- HÀM TỰ ĐỘNG BẬT / T T NHẠC NỀN ---
+    public void ToggleMusic()
     {
-        PlayerPrefs.DeleteKey("SavedLevelIndex");
-        Debug.Log("Đã xóa sạch tiến trình chơi cũ!");
+        isMusicOn = !isMusicOn; // Đổi trạng thái (Bật thành Tắt, Tắt thành Bật)
+
+        // Lưu cài đặt âm thanh vào bộ nhớ máy (0 = Bật, 1 = Tắt)
+        PlayerPrefs.SetInt("MusicMuted", isMusicOn ? 0 : 1);
+        PlayerPrefs.Save();
+
+        // Thực thi lệnh bật tắt thực tế và đổi chữ UI
+        ApplyMusicState();
     }
+
+    private void ApplyMusicState()
+    {
+        if (bgmAudioSource != null)
+        {
+            // Nếu isMusicOn = true thì mute = false (phát nhạc) và ngược lại
+            bgmAudioSource.mute = !isMusicOn;
+        }
+
+        if (musicButtonText != null)
+        {
+            // Tự động cập nhật chữ hiển thị trên nút bấm tương ứng
+            musicButtonText.text = isMusicOn ? "MUSIC: ON" : "MUSIC: OFF";
+        }
+    }
+
+    public void OpenLevels() { SceneManager.LoadScene("LevelSelect"); }
+    public void QuitGame() { Application.Quit(); Debug.Log("Thoát game"); }
 }
