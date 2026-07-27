@@ -6,15 +6,15 @@ public class TrafficLightTrigger : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            // Kiểm tra xem "Tổng đài" TrafficSystem có đang bật đèn đỏ hay không
+            // Check if the "TrafficSystem" call center is showing a red light.
             if (TrafficSystem.Instance != null && TrafficSystem.Instance.currentLight == TrafficSystem.LightColor.Red)
             {
                 Debug.LogWarning("-> [CONSOLE] Phát hiện xe vượt đèn đỏ!");
 
-                // 1. Gọi lệnh hiển thị UI thông qua thư viện Singleton tập trung (Chắc chắn lên màn hình 100%)
+                // 1. Call the UI display command using the centralized Singleton library (Guaranteed to display on screen 100%)
                 TrafficSystem.Instance.ShowNotification("VI PHẠM: Vượt đèn đỏ! Trừ 50 điểm", Color.red);
 
-                // 2. Tiến hành trừ điểm trực tiếp trên xe
+                // 2. Deduct points directly from the vehicle.
                 AdvancedCarController carScript = other.GetComponent<AdvancedCarController>();
                 if (carScript != null)
                 {
