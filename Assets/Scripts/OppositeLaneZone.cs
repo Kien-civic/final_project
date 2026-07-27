@@ -2,8 +2,8 @@
 
 public class OppositeLaneZone : MonoBehaviour
 {
-    public int penaltyPoints = 20;           // Lấn làn phạt nặng: 20 điểm
-    public float timeBeforePenalty = 2f;     // Chỉ cho phép quá tay 2 giây là phạt luôn
+    public int penaltyPoints = 20;           // Lane encroachment is heavily penalized: 20 points.
+    public float timeBeforePenalty = 2f;     // Only allow 2 seconds of violation before penalizing
 
     private bool isPlayerViolating = false;
     private float violationTimer = 0f;
@@ -20,7 +20,7 @@ public class OppositeLaneZone : MonoBehaviour
                 playerCar.score -= penaltyPoints;
                 Debug.LogError($"CẢNH BÁO NGUY HIỂM: Bạn đang đi ngược chiều! Trừ {penaltyPoints} điểm.");
 
-                // Đẩy thông báo khẩn cấp lên UI chính
+                // Push emergency notifications to the main UI.
                 TrafficSystem traffic = FindFirstObjectByType<TrafficSystem>();
                 if (traffic != null && traffic.warningText != null)
                 {
@@ -28,7 +28,7 @@ public class OppositeLaneZone : MonoBehaviour
                     traffic.warningText.color = Color.red;
                 }
 
-                violationTimer = 0f; // Tiếp tục phạt sau mỗi 2s nếu không chịu về làn
+                violationTimer = 0f; // The penalty will continue every 2 seconds if the driver fails to return to their lane.
             }
         }
     }
@@ -48,7 +48,7 @@ public class OppositeLaneZone : MonoBehaviour
                 if (traffic != null && traffic.warningText != null)
                 {
                     traffic.warningText.text = "NGUY HIỂM: BẠN ĐANG LẤN LÀN NGƯỢC CHIỀU!";
-                    traffic.warningText.color = new Color(1f, 0.5f, 0f); // Màu cam cảnh báo
+                    traffic.warningText.color = new Color(1f, 0.5f, 0f); // Orange warning light
                 }
             }
         }
@@ -64,7 +64,7 @@ public class OppositeLaneZone : MonoBehaviour
             TrafficSystem traffic = FindFirstObjectByType<TrafficSystem>();
             if (traffic != null && traffic.warningText != null)
             {
-                traffic.warningText.text = ""; // Xóa chữ khi đã về làn an toàn
+                traffic.warningText.text = ""; // Delete the text once you've returned to the safe lane.
             }
         }
     }
