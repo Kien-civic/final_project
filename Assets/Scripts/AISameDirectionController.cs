@@ -14,21 +14,21 @@ public class AISameDirectionController : MonoBehaviour
 
     [Header("Spawn Position")]
     [Range(0f, 1f)]
-    public float startProgress = 0f;        // Chọn vị trí xuất phát cho từng xe (0.0 đến 1.0)
+    public float startProgress = 0f;        // Select the starting position for each vehicle (0.0 to 1.0)
 
     [Header("Brake Event Settings")]
     public float normalSpeed = 12f;
     public float brakeSpeed = 0f;
-    public float deceleration = 70f;        // Bạn đang để 70f phanh rất gắt, giữ nguyên nhé!
+    public float deceleration = 70f;        // You are setting 70f, very sharp braking, keep it as is!
 
     [Header("Auto Resume Settings")]
-    public float stopDuration = 3f;         // Số giây xe đứng im trước khi tự chạy tiếp
+    public float stopDuration = 3f;         // Number of seconds the vehicle stays stopped before resuming
 
     private float currentSpeed;
     private float progress = 0f;
     private float splineLength;
     private bool isBraking = false;
-    private float stopTimer = 0f;           // Biến đếm thời gian dừng
+    private float stopTimer = 0f;           // Timer for counting the stop duration
 
     void Start()
     {
@@ -38,7 +38,7 @@ public class AISameDirectionController : MonoBehaviour
             splineLength = splineContainer.CalculateLength();
         }
 
-        // ĐỂ MỖI XE CÓ VỊ TRÍ XUẤT PHÁT RIÊNG
+        // EACH VEHICLE HAS A UNIQUE STARTING POSITION
         progress = startProgress;
     }
 
@@ -46,20 +46,20 @@ public class AISameDirectionController : MonoBehaviour
     {
         if (splineContainer == null || splineLength == 0) return;
 
-        // LOGIC XỬ LÝ PHANH VÀ TỰ CHẠY TIẾP
+        // BRAKE AND AUTO RESUME LOGIC
         if (isBraking)
         {
-            // Giảm tốc độ về brakeSpeed
+            // Reduce speed to brakeSpeed
             currentSpeed = Mathf.MoveTowards(currentSpeed, brakeSpeed, deceleration * Time.deltaTime);
 
-            // Nếu xe đã giảm tốc xuống bằng hoặc gần bằng tốc độ phanh (đã dừng hẳn)
+            // If the vehicle has slowed down to or near the brake speed (fully stopped)
             if (currentSpeed <= brakeSpeed + 0.1f)
             {
-                stopTimer += Time.deltaTime; // Bắt đầu đếm giây
+                stopTimer += Time.deltaTime; // Start counting the stop duration
 
                 if (stopTimer >= stopDuration)
                 {
-                    // ĐÃ HẾT THỜI GIAN CHỜ -> NHẢ PHANH CHẠY TIẾP!
+                    // STOP DURATION ELAPSED -> RELEASE BRAKE AND RESUME MOVEMENT
                     isBraking = false;
                     stopTimer = 0f;
                 }
@@ -67,15 +67,15 @@ public class AISameDirectionController : MonoBehaviour
         }
         else
         {
-            // Nếu không phanh (hoặc vừa nhả phanh), tăng tốc mượt mà trở lại tốc độ bình thường
+            // If not braking (or just released the brake), smoothly accelerate back to normal speed
             currentSpeed = Mathf.MoveTowards(currentSpeed, normalSpeed, deceleration * Time.deltaTime);
         }
 
-        // Tính tiến trình chạy dọc theo đường Spline
+        // Calculate the progress along the Spline
         float deltaProgress = (currentSpeed / splineLength) * Time.deltaTime;
         progress += deltaProgress;
 
-        // Logic vòng lặp (Loop): Hết đường thì tự quay lại đầu dốc và reset trạng thái
+        // Loop logic: If the vehicle reaches the end of the path, reset to the start and reset state
         if (progress >= 1f)
         {
             progress = 0f;
@@ -84,7 +84,7 @@ public class AISameDirectionController : MonoBehaviour
             currentSpeed = normalSpeed;
         }
 
-        // Tính toán vị trí và hướng xoay bám theo Spline (Giữ nguyên phần fix lỗi của bạn)
+        // Calculate the position and rotation along the Spline (Keep your fix  )
         splineContainer.Evaluate(progress, out float3 splinePosition, out float3 forward, out float3 up);
         float3 rightDirection = math.cross(up, forward);
         float3 offsetVector = math.normalize(rightDirection) * laneOffset;
@@ -102,7 +102,7 @@ public class AISameDirectionController : MonoBehaviour
     public void TriggerEmergencyBrake()
     {
         isBraking = true;
-        stopTimer = 0f; // Reset lại bộ đếm thời gian mỗi khi bị kích hoạt phanh
-        Debug.LogWarning("BẪY KÍCH HOẠT: Xe đang phanh!");
+        stopTimer = 0f; // Reset the stop duration timer each time the brake is triggered
+        Debug.LogWarning("EMERGENCY BRAKE TRIGGERED: Vehicle is braking!");
     }
 }
