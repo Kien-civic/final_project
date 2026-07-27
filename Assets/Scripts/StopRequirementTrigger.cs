@@ -1,39 +1,39 @@
-﻿using UnityEngine;
+﻿uusing UnityEngine;
 
 public class StopRequirementTrigger : MonoBehaviour
 {
-    [Header("Cấu hình thử thách")]
-    public float requiredStopTime = 3f; // Thời gian bắt buộc phải dừng (3 giây)
-    public int penaltyPoints = 50;       // Điểm phạt nếu vi phạm
-    public string locationName = "Vạch đi bộ"; // Tên vị trí để hiện thông báo
+    [Header("Challenge Configuration")]
+    public float requiredStopTime = 3f; // The required stopping time is 3 seconds.
+    public int penaltyPoints = 50;       // Penalty points for violations.
+    public string locationName = "Vạch đi bộ"; // Location name to display notifications
 
-    private float stopTimer = 0f;       // Bộ đếm thời gian xe đã dừng
-    private bool isPlayerInside = false; // Trạng thái xe đang ở trong vùng Trigger
-    private bool hasStoppedEnough = false; // Trạng thái đã dừng đủ 3 giây chưa
-    private AdvancedCarController playerCar; // Lưu trữ script của xe khi đi vào
+    private float stopTimer = 0f;       // Vehicle stopped timer
+    private bool isPlayerInside = false; // The vehicle is currently in the Trigger zone.
+    private bool hasStoppedEnough = false; // Has the state been paused for 3 seconds yet?
+    private AdvancedCarController playerCar; // Store the vehicle's script when it enters.
 
     void Update()
     {
-        // Nếu xe đang ở bên trong vùng Trigger và chưa hoàn thành thử thách dừng 3s
+        // If the vehicle is inside the Trigger Zone and has not yet completed the 3-second stop challenge.
         if (isPlayerInside && playerCar != null && !hasStoppedEnough)
         {
-            // GIẢ SỬ trong AdvancedCarController bạn có biến vận tốc, hoặc tính qua Rigidbody.
-            // Ở đây mình lấy vận tốc trực tiếp từ Rigidbody của xe cho chính xác nhất.
+            // Assume in AdvancedCarController you have a speed variable, or calculate it via Rigidbody.
+            // Here we take the speed directly from the car's Rigidbody for the most accurate measurement.
             Rigidbody rb = playerCar.GetComponent<Rigidbody>();
 
-            // Kiểm tra nếu xe đã dừng hẳn (vận tốc xấp xỉ bằng 0)
+            // Check if the vehicle has come to a complete stop (speed is approximately zero).
             if (rb != null && rb.linearVelocity.magnitude < 0.1f)
             {
-                stopTimer += Time.deltaTime; // Bắt đầu tích lũy thời gian dừng
+                stopTimer += Time.deltaTime; // Start accumulating stopping time.
                 Debug.Log($"Xe đang dừng tại {locationName}: {stopTimer:F1}s / {requiredStopTime}s");
 
-                // Nếu dừng liên tục đủ thời gian yêu cầu
+                // If the vehicle has stopped continuously for the required time
                 if (stopTimer >= requiredStopTime)
                 {
                     hasStoppedEnough = true;
                     Debug.Log($"Chúc mừng! Đã dừng đủ {requiredStopTime}s tại {locationName}.");
 
-                    // Hiển thị thông báo khen ngợi lên UI nếu muốn (mượn tạm warningText của TrafficSystem)
+                    // Display a compliment message on the UI if desired (borrowing TrafficSystem's warningText temporarily).
                     TrafficSystem traffic = FindFirstObjectByType<TrafficSystem>();
                     if (traffic != null && traffic.warningText != null)
                     {
@@ -44,7 +44,7 @@ public class StopRequirementTrigger : MonoBehaviour
             }
             else
             {
-                // Nếu xe di chuyển (bỏ chân phanh), reset lại bộ đếm từ đầu (bắt buộc dừng liên tục)
+                // If the vehicle moves (releases the brake), reset the stop timer (must stop continuously)
                 if (stopTimer > 0f && !hasStoppedEnough)
                 {
                     stopTimer = 0f;
@@ -54,7 +54,7 @@ public class StopRequirementTrigger : MonoBehaviour
         }
     }
 
-    // Khi xe bắt đầu đi vào vùng vạch dừng
+    // When the car begins to enter the stop line
     void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Player"))
@@ -70,23 +70,23 @@ public class StopRequirementTrigger : MonoBehaviour
         }
     }
 
-    // Khi xe đi ra khỏi vùng vạch dừng (vượt qua vạch)
+    // When the vehicle moves out of the stop line (crosses the line)
     void OnTriggerExit(Collider other)
     {
         if (other.CompareTag("Player"))
         {
-            // Nếu đi ra khỏi vùng mà CHƯA dừng đủ 3 giây -> PHẠT
+            // If you leave the designated area WITHOUT stopping for at least 3 seconds -> FINE
             if (!hasStoppedEnough)
             {
                 Debug.LogWarning($"VI PHẠM: Chưa dừng đủ 3s tại {locationName}!");
 
-                // Thực hiện trừ 50 điểm của xe
+                // Deduct 50 points from the vehicle.
                 if (playerCar != null)
                 {
                     playerCar.score -= penaltyPoints;
                 }
 
-                // Hiển thị chữ phạt màu đỏ rực lên màn hình chính
+                // Display the penalty message in bright red on the home screen.
                 TrafficSystem traffic = FindFirstObjectByType<TrafficSystem>();
                 if (traffic != null && traffic.warningText != null)
                 {
@@ -95,9 +95,10 @@ public class StopRequirementTrigger : MonoBehaviour
                 }
             }
 
-            // Reset trạng thái khi xe đã đi qua hẳn
+            // Reset the status once the vehicle has completely passed.
             isPlayerInside = false;
             playerCar = null;
         }
     }
 }
+
