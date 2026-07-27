@@ -3,66 +3,66 @@ using UnityEngine.SceneManagement;
 
 public class PauseMenu : MonoBehaviour
 {
-    [Header("Bảng Menu Tạm Dừng")]
-    public GameObject pausePanel; // Kéo thả LosePanel sao chép hoặc Panel Tạm dừng vào đây
+    [Header("Pause Menu Configuration")]
+    public GameObject pausePanel; // Drag and drop the Copy LosePanel or Pause Panel here.
 
-    // Biến trạng thái để kiểm tra game có đang dừng không
+    // Use the state variable to check if the game is paused.
     private bool isPaused = false;
 
     void Start()
     {
-        // Đảm bảo lúc mới vào màn chơi, bảng Pause Menu phải ẩn đi
+        // Ensure the Pause Menu panel is hidden when the game starts
         if (pausePanel != null)
         {
             pausePanel.SetActive(false);
         }
 
-        // Trả lại tốc độ thời gian bình thường khi bắt đầu màn mới
+        // Restore normal time scale when starting a new level
         Time.timeScale = 1f;
     }
 
-    // 1. CHỨC NĂNG TẠM DỪNG (Gắn vào nút ||)
+    // 1. PAUSE FUNCTION (Attach to the || button)
     public void PauseGame()
     {
         isPaused = true;
         if (pausePanel != null)
         {
-            pausePanel.SetActive(true); // Hiện bảng menu lên
+            pausePanel.SetActive(true); // Show the pause menu panel
         }
 
-        // NGỪNG THỜI GIAN: Mọi chuyển động vật lý, AI, xe cộ sẽ đứng yên hoàn toàn
+        // STOP TIME: All physics, AI, and vehicles will be completely frozen
         Time.timeScale = 0f;
     }
 
-    // 2. CHỨC NĂNG TIẾP TỤC (Gắn vào nút Resume)
+    // 2. RESUME FUNCTION (Attach to the Resume button)
     public void ResumeGame()
     {
         isPaused = false;
         if (pausePanel != null)
         {
-            pausePanel.SetActive(false); // Ẩn bảng menu đi
+            pausePanel.SetActive(false); // Hide the pause menu panel
         }
 
-        // KHÔI PHỤC THỜI GIAN: Tiếp tục trò chơi bình thường
+        // RESTORE TIME: Resume the game normally
         Time.timeScale = 1f;
     }
 
-    // 3. CHỨC NĂNG CHƠI LẠI (Gắn vào nút Repeat)
+    // 3. REPEAT FUNCTION (Attach to the Repeat button)
     public void RepeatLevel()
     {
-        // Đặt lại thời gian về bình thường trước khi load để tránh bị đứng game
+        // Reset the time scale to normal before loading to avoid freezing the game
         Time.timeScale = 1f;
 
-        // Load lại chính Scene hiện tại đang chơi
+        // Reload the current active scene
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
-    // 4. CHỨC NĂNG VỀ MÀN HÌNH CHÍNH (Gắn vào nút Main Menu)
+    // 4. MAIN MENU FUNCTION (Attach to the Main Menu button)
     public void GoToMainMenu()
     {
         Time.timeScale = 1f;
 
-        // Hãy thay tên "MainMenu" bằng tên chính xác của Scene màn hình chính của bạn
+        // Replace "MainMenu" with the exact name of your main menu scene
         SceneManager.LoadScene("MainMenu");
     }
 }
