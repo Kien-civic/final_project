@@ -2,43 +2,45 @@
 
 public class UrbanSpeedZone : MonoBehaviour
 {
-    [Header("Cấu hình giới hạn tốc độ")]
-    public float maxSpeedLimit = 50f;        // Giới hạn tốc độ tối đa là 50 km/h
-    public int penaltyPoints = 15;          // Điểm phạt mỗi lần vi phạm (Ví dụ: 15đ)
-    public float penaltyCheckRate = 2f;     // Cứ mỗi 2 giây chạy quá tốc độ sẽ phạt tiếp
+    [Header("Urban Speed Zone Configuration")]
+    public float maxSpeedLimit = 50f;        // The maximum speed limit is 50 km/h.
+    public int penaltyPoints = 15;          // Penalty points for each violation (e.g., 15 points)
+    public float penaltyCheckRate = 2f;     // Every 2 seconds of speeding will result in another penalty
 
     private bool isPlayerInZone = false;
     private float penaltyTimer = 0f;
     private AdvancedCarController playerCar;
 
-    // Biến cờ hiệu (Flag) để ngăn chặn việc gọi UI liên tục mỗi khung hình
+    [Header("System Links")]
+    public TrafficSystem trafficSystem; // Create a dropdown menu outside the Inspector.
+
+    // Use flags to prevent the UI from being called repeatedly every frame.
     private bool hasShownOverSpeedWarning = false;
 
     void Update()
     {
-        // Chỉ tính toán khi xe người chơi đang nằm trong vùng khu dân cư/công nghiệp
+        // Calculations are only performed when the player's vehicle is located within a residential/industrial zone.
         if (isPlayerInZone && playerCar != null)
         {
-            // Lấy vận tốc hiện tại của xe (Tính theo km/h từ Rigidbody)
+            // Get the current speed of the vehicle (measured in km/h from the Rigidbody).
             float currentSpeedKMH = playerCar.GetComponent<Rigidbody>().linearVelocity.magnitude * 3.6f;
 
             if (currentSpeedKMH > maxSpeedLimit)
             {
-                // Tăng bộ đếm thời gian vi phạm công khai công bằng
+                // Increase the penalty timer fairly and transparently
                 penaltyTimer += Time.deltaTime;
 
-                // CHỈ GỌI UI MỘT LẦN DUY NHẤT KHI CHỚM QUÁ TỐC ĐỘ
+                // ONLY CALL UI ONCE WHEN SPEEDING
                 if (!hasShownOverSpeedWarning)
                 {
-                    TrafficSystem traffic = FindFirstObjectByType<TrafficSystem>();
-                    if (traffic != null)
-                    {
-                        traffic.ShowNotification($"QUÁ TỐC ĐỘ KHU DÂN CƯ! ({currentSpeedKMH.ToString("F0")}/{maxSpeedLimit} km/h)", Color.red);
-                    }
-                    hasShownOverSpeedWarning = true; // Đánh dấu là đã hiện chữ, frame sau không gọi lại nữa
+                if (trafficSystem != null)
+{
+    trafficSystem.ShowNotification("VÀO KHU DÂN CƯ: GIỚI HẠN 50 KM/H!", new Color(1f, 0.6f, 0f));
+}
+                    hasShownOverSpeedWarning = true; // Mark that the warning has been shown, so it won't be called again in the next frame
                 }
 
-                // Nếu quá tốc độ duy trì liên tục hết thời gian check (2 giây)
+                // If speeding continues for the entire check duration (2 seconds)
                 if (penaltyTimer >= penaltyCheckRate)
                 {
                     playerCar.score -= penaltyPoints;
@@ -47,19 +49,19 @@ public class UrbanSpeedZone : MonoBehaviour
                     TrafficSystem traffic = FindFirstObjectByType<TrafficSystem>();
                     if (traffic != null)
                     {
-                        traffic.ShowNotification($"VI PHẠM TỐC ĐỘ! -{penaltyPoints}đ", Color.red);
+                        traffic.ShowNotification($"VI PHẠM: PHÓNG NHANH QUA NGÃ TƯ! ({currentSpeedKMH.ToString("F0")}/30 km/h)", Color.red);
                     }
 
-                    penaltyTimer = 0f; // Reset thời gian để nếu tiếp tục phóng nhanh thì 2s sau phạt tiếp
+                    penaltyTimer = 0f; // Reset the timer so that if speeding continues, the penalty will be applied again after 2 seconds.
                 }
             }
             else
             {
-                // Nếu người chơi đã chủ động giảm tốc độ xuống dưới 50 km/h an toàn
+                // If the player has proactively reduced speed below 50 km/h safely
                 if (hasShownOverSpeedWarning)
                 {
                     penaltyTimer = 0f;
-                    hasShownOverSpeedWarning = false; // Reset cờ hiệu về trạng thái bình thường
+                    hasShownOverSpeedWarning = false; // Reset the flag to its normal state
 
                     TrafficSystem traffic = FindFirstObjectByType<TrafficSystem>();
                     if (traffic != null)
@@ -71,7 +73,7 @@ public class UrbanSpeedZone : MonoBehaviour
         }
     }
 
-    // Khi xe đi vào biển bắt đầu khu dân cư (Biển R.420)
+    // When the vehicle enters the residential area (Sign R.420)
     void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Player"))
@@ -81,19 +83,19 @@ public class UrbanSpeedZone : MonoBehaviour
             {
                 isPlayerInZone = true;
                 penaltyTimer = 0f;
-                hasShownOverSpeedWarning = false; // Reset cờ hiệu khi vào vùng mới
+                hasShownOverSpeedWarning = false; // Reset the flag when entering a new zone
                 Debug.Log("Đã đi vào khu vực đông dân cư! Tốc độ tối đa giới hạn 50 km/h.");
 
                 TrafficSystem traffic = FindFirstObjectByType<TrafficSystem>();
                 if (traffic != null)
                 {
-                    traffic.ShowNotification("VÀO KHU DÂN CƯ: GIỚI HẠN 50 KM/H!", new Color(1f, 0.6f, 0f));
+                    traffic.ShowNotification("SẮP ĐẾN NGÃ TƯ: HÃY GIẢM TỐC DƯỚI 30 KM/H!", new Color(1f, 0.6f, 0f)); // Orange warning light
                 }
             }
         }
     }
 
-    // Khi xe đi qua biển hết khu dân cư (Biển R.421)
+    // When the vehicle passes the sign indicating the end of the residential area (Sign R.421)
     void OnTriggerExit(Collider other)
     {
         if (other.CompareTag("Player"))
@@ -106,8 +108,9 @@ public class UrbanSpeedZone : MonoBehaviour
             TrafficSystem traffic = FindFirstObjectByType<TrafficSystem>();
             if (traffic != null)
             {
-                traffic.ShowNotification("HẾT KHU DÂN CƯ - TỐC ĐỘ TỰ DO", Color.green);
+                traffic.ShowNotification("ĐÃ QUA NGÃ TƯ AN TOÀN", Color.green);
             }
         }
     }
 }
+
