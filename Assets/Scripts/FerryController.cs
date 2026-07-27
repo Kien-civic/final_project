@@ -2,10 +2,10 @@
 
 public class FerryController : MonoBehaviour
 {
-    [Header("Cấu hình hành trình phà")]
-    public Transform bến_A;       // Kéo thả BenA từ Hierarchy vào đây
-    public Transform bến_B;       // Kéo thả BenB từ Hierarchy vào đây
-    public float speed = 3.5f;    // Tốc độ phà chạy qua sông
+    [Header("Ferry Route Configuration")]
+    public Transform bến_A;       // Drag and drop A station from Hierarchy into this location.
+    public Transform bến_B;       // Drag and drop B station from Hierarchy into this location.
+    public float speed = 3.5f;    // Ferry speed across the river
 
     private Vector3 targetPosition;
     private bool isMoving = false;
@@ -18,7 +18,7 @@ public class FerryController : MonoBehaviour
 
     void Update()
     {
-        // Khi phà được kích hoạt chạy sang sông
+        // When the ferry is activated to cross the river
         if (isMoving)
         {
             transform.position = Vector3.MoveTowards(transform.position, targetPosition, speed * Time.deltaTime);
@@ -30,32 +30,32 @@ public class FerryController : MonoBehaviour
         }
     }
 
-    // Khi bộ phận của xe chạm vào khối tàng hình AttachTrigger
+    // When a part of the vehicle touches the AttachTrigger stealth block.
     private void OnTriggerEnter(Collider other)
     {
         if (other.transform.root.CompareTag("Player"))
         {
             Debug.Log("-> XE ĐÃ LÊN PHÀ THÀNH CÔNG!");
 
-            // Khóa xe làm con của phà để xe tịnh tiến theo hành trình phà
+            // Lock the vehicle in place, allowing it to move along the ferry's course.
             other.transform.root.SetParent(transform);
 
-            // Sau 1 giây phà sẽ tự động nhổ neo chạy sang sông
+            // After 1 second, the ferry will automatically weigh anchor and move across the river.
             Invoke("StartFerry", 1f);
         }
     }
 
-    // Khi người chơi cố tình nhấn ga lái xe rời khỏi phạm vi an toàn của phà giữa dòng sông
+    // When the player intentionally accelerates the vehicle out of the safe area of the ferry in the middle of the river.
     private void OnTriggerExit(Collider other)
     {
         if (other.transform.root.CompareTag("Player"))
         {
             Debug.Log("-> CẢNH BÁO: Xe đã tự ý di chuyển rời khỏi phà!");
 
-            // Giải phóng xe độc lập hoàn toàn khỏi phà để trọng lực tự nhiên xử lý rơi tự do
+            // Release the vehicle completely from the ferry to allow natural gravity to handle the free fall.
             other.transform.root.SetParent(null);
 
-            // Đảo mục tiêu bến để phà sẵn sàng cho lượt quay đầu sau này
+            // Swap the target dock to prepare the ferry for the next return trip.
             if (!isMoving)
             {
                 targetPosition = (targetPosition == bến_B.position) ? bến_A.position : bến_B.position;
