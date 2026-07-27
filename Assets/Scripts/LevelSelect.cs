@@ -47,4 +47,16 @@ public class LevelSelect : MonoBehaviour
     {
         SceneManager.LoadScene("Tang9");
     }
+
+    public void BackToMainMenu()
+    {
+        // Restore normal running time to prevent the game from being paused.
+        Time.timeScale = 1f;
+
+        // Load the MainMenu scene. You can either use the scene index (usually 0) or the exact name of the scene.
+        SceneManager.LoadScene("MainMenu");
+
+        // Or if your MainMenu is the first scene in the Build Settings:
+        // SceneManager.LoadScene(0);
+    }
 }
