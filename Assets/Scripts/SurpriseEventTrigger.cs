@@ -2,29 +2,29 @@
 
 public class SurpriseEventTrigger : MonoBehaviour
 {
-    [Header("Cấu hình vật thể bất ngờ")]
-    public GameObject obstacle;       // Kéo thả Object vật cản ẩn trong ngõ vào đây
-    public Transform stopPosition;    // Kéo thả GameObject mốc vị trí dừng giữa đường vào đây
-    public float moveSpeed = 8f;      // Tốc độ lao ra của vật cản
+    [Header("Surprise Object Configuration")]
+    public GameObject obstacle;       // Drag and drop the hidden obstacle object in the entrance here.
+    public Transform stopPosition;    // Drag and drop the GameObject marking the stop position in the middle of the road here.
+    public float moveSpeed = 8f;      // Speed at which the obstacle moves out
 
-    private bool isTriggered = false; // Đảm bảo sự kiện chỉ kích hoạt 1 lần duy nhất
+    private bool isTriggered = false; // Ensure the event is triggered only once
 
     void OnTriggerEnter(Collider other)
     {
-        // Kiểm tra nếu xe người chơi đi qua vạch kích hoạt tình huống bất ngờ
+        // Check if the player's vehicle crosses the line to trigger an unexpected situation.
         if (other.CompareTag("Player") && !isTriggered)
         {
             isTriggered = true;
             Debug.Log("TÌNH HUỐNG KHẨN CẤP: Chướng ngại vật đang lao ra đường!");
 
-            // Gọi TrafficSystem bắn chữ cảnh báo màu vàng lên màn hình chính
+            // Calling TrafficSystem will display a yellow warning message on the home screen.
             TrafficSystem traffic = FindFirstObjectByType<TrafficSystem>();
             if (traffic != null)
             {
                 traffic.ShowNotification("CẢNH BÁO BẤT NGỜ: GIẢM TỐC GẤP!", new Color(1f, 0.5f, 0f));
             }
 
-            // Kích hoạt tiến trình di chuyển vật cản lao ra đường
+            // Activate the process of moving obstacles out onto the road.
             if (obstacle != null && stopPosition != null)
             {
                 StartCoroutine(MoveObstacleOut());
@@ -32,21 +32,21 @@ public class SurpriseEventTrigger : MonoBehaviour
         }
     }
 
-    // Coroutine di chuyển vật cản mượt mà từ trong ngõ ra giữa đường
+    // Coroutine smoothly moved the obstacle from the alleyway into the middle of the street.
     private System.Collections.IEnumerator MoveObstacleOut()
     {
-        // Nếu ban đầu vật cản đang bị ẩn (Deactivate), bật nó lên
+        // If the obstacle was initially hidden (Deactivated), turn it on.
         obstacle.SetActive(true);
 
         while (Vector3.Distance(obstacle.transform.position, stopPosition.position) > 0.1f)
         {
-            // Tịnh tiến vật cản lao ra điểm dừng giữa đường
+            // The obstacle moves forward and stops midway.
             obstacle.transform.position = Vector3.MoveTowards(
                 obstacle.transform.position,
                 stopPosition.position,
                 moveSpeed * Time.deltaTime
             );
-            yield return null; // Chờ frame tiếp theo
+            yield return null; // Wait for the next frame.
         }
     }
 }
