@@ -11,21 +11,15 @@ public class ObstacleCollision : MonoBehaviour
             AdvancedCarController car = collision.gameObject.GetComponent<AdvancedCarController>();
             if (car != null)
             {
+                // Deduct 10 points from the car's physical damage.
                 car.score -= 10;
 
-                // --- ĐOẠN CODE HIỂN THỊ CHỮ LÊN MÀN HÌNH CHÍNH ---
-                // Mượn ô chữ warningText từ hệ thống quản lý hoặc ép trực tiếp qua biến của xe
-                if (car.scoreText != null)
+                // Find and call the ShowNotification function to automatically delete text after 3 seconds. ---
+                TrafficSystem traffic = FindFirstObjectByType<TrafficSystem>();
+                if (traffic != null)
                 {
-                    // Nếu bạn có một ô chữ thông báo riêng trên xe (ví dụ: warningText) thì dùng nó.
-                    // Ở đây, để nhanh gọn, ta gọi hệ thống quản lý Đèn hoặc UI để hiện chữ.
-                    // Cách đơn giản nhất là tìm Script TrafficSystem đang có trong Scene để ké ô chữ cảnh báo của nó:
-                    TrafficSystem traffic = FindFirstObjectByType<TrafficSystem>();
-                    if (traffic != null && traffic.warningText != null)
-                    {
-                        traffic.warningText.text = "VI PHẠM: Va chạm vỉa hè! Trừ 10 điểm";
-                        traffic.warningText.color = Color.yellow; // Đổi sang màu vàng cho phân biệt với đèn đỏ
-                    }
+                    string collisionMsg = "VI PHẠM: Va chạm vỉa hè/vật cản! Trừ 10 điểm";
+                    traffic.ShowNotification(collisionMsg, Color.yellow); // Yellow warning light
                 }
             }
         }
