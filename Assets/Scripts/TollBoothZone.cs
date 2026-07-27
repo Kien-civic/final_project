@@ -2,32 +2,32 @@
 
 public class TollBoothZone : MonoBehaviour
 {
-    [Header("Cấu hình Trạm")]
+    [Header("Toll Booth Configuration")]
     public string boothName = "Trạm thu phí vào";
-    public float speedLimitInsideBooth = 30f; // Tốc độ tối đa khi qua trạm (30 km/h)
-    public int penaltyPoints = 30;           // Điểm phạt nếu phóng nhanh qua trạm
+    public float speedLimitInsideBooth = 30f; // Maximum speed when passing the station (30 km/h)
+    public int penaltyPoints = 30;           // Penalty points for speeding through the booth
 
     private bool isPlayerInBooth = false;
     private AdvancedCarController playerCar;
     private Rigidbody carRigidbody;
-    private bool hasBeenPenalized = false; // Chặn phạt liên tục trong 1 lần qua trạm
+    private bool hasBeenPenalized = false; // Prevent continuous penalties in a single pass
 
     void Update()
     {
         if (isPlayerInBooth && playerCar != null && carRigidbody != null && !hasBeenPenalized)
         {
-            // Tính vận tốc thực tế (km/h)
+            // Calculate the actual speed (km/h)
             float currentSpeedKMH = carRigidbody.linearVelocity.magnitude * 3.6f;
 
-            // Nếu xe chạy quá 30 km/h trong trạm thu phí
+            // If a vehicle exceeds 30 km/h within the toll booth.
             if (currentSpeedKMH > speedLimitInsideBooth)
             {
-                hasBeenPenalized = true; // Phạt 1 lần duy nhất để cảnh cáo
+                hasBeenPenalized = true; // A single penalty as a warning.
                 playerCar.score -= penaltyPoints;
 
                 Debug.LogWarning($"VI PHẠM: Phóng nhanh qua {boothName}! Tốc độ: {currentSpeedKMH:F0} km/h");
 
-                // --- ĐÃ SỬA: Gọi thông qua hàm ShowNotification để kích hoạt đếm ngược 3 giây ---
+                // Call the ShowNotification function to trigger a 3-second countdown.
                 TrafficSystem traffic = FindFirstObjectByType<TrafficSystem>();
                 if (traffic != null)
                 {
@@ -48,10 +48,10 @@ public class TollBoothZone : MonoBehaviour
             if (playerCar != null && carRigidbody != null)
             {
                 isPlayerInBooth = true;
-                hasBeenPenalized = false; // Reset trạng thái phạt cho lượt này
+                hasBeenPenalized = false; // Reset penalty status for this pass
                 Debug.Log($"Bạn đang đi vào: {boothName}. Hãy giảm tốc độ dưới {speedLimitInsideBooth} km/h!");
 
-                // --- ĐÃ SỬA: Gọi thông qua hàm ShowNotification để chữ tự biến mất sau 3 giây ---
+                // Call the ShowNotification function to make the text disappear after 3 seconds.
                 TrafficSystem traffic = FindFirstObjectByType<TrafficSystem>();
                 if (traffic != null)
                 {
@@ -71,7 +71,7 @@ public class TollBoothZone : MonoBehaviour
             carRigidbody = null;
             Debug.Log($"Đã ra khỏi: {boothName}");
 
-            // Bạn có thể tùy chọn bắn chữ thông báo đã ra khỏi trạm an toàn
+            // You can optionally display a message indicating that you have left the safe zone.
             TrafficSystem traffic = FindFirstObjectByType<TrafficSystem>();
             if (traffic != null)
             {
