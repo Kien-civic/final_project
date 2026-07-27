@@ -6,7 +6,7 @@ public class LevelManager : MonoBehaviour
     public bool checkpoint1Done = false;
     public bool checkpoint2Done = false;
 
-    // Hàm kiểm tra đã hoàn thành tất cả chưa
+    // The function checks if everything is complete.
     public bool AllCheckpointsCompleted()
     {
         return checkpoint1Done && checkpoint2Done;
