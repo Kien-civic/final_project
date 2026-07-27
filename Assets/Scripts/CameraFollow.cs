@@ -12,20 +12,20 @@ public class CameraFollow : MonoBehaviour
     {
         if (target == null) return;
 
-        // Vị trí phía sau xe
+        // Rear position of the car
         Vector3 desiredPosition =
             target.position
             - target.forward * distance
             + Vector3.up * height;
 
-        // Camera di chuyển mượt
+        // The camera moves smoothly.
         transform.position = Vector3.Lerp(
             transform.position,
             desiredPosition,
             smoothSpeed * Time.deltaTime
         );
 
-        // Camera nhìn vào xe
+        // Camera looking inside the car.
         transform.LookAt(target);
     }
 }
