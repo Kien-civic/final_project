@@ -4,11 +4,11 @@ public class SurpriseBrakeEvent : MonoBehaviour
 {
     [Header("Brake Settings")]
     public float normalSpeed = 12f;
-    public float brakeSpeed = 0f;        // Phanh gấp về 0 (dừng hẳn) hoặc 2-3f (phanh chậm)
-    public float deceleration = 5f;      // Độ mượt khi đạp phanh (càng cao phanh càng khựng)
+    public float brakeSpeed = 0f;        // Brake hard to 0 (complete stop) or 2-3f (slow braking)
+    public float deceleration = 5f;      // Smoothness when braking (higher value means more abrupt braking)
 
     [Header("Visual Effects (Optional)")]
-    public GameObject brakeLights;       // Đèn phanh phía sau xe (nếu có, tự bật khi phanh)
+    public GameObject brakeLights;       // Rear brake lights (if any, automatically turn on when braking)
 
     private float currentSpeed;
     private bool isBraking = false;
@@ -21,24 +21,24 @@ public class SurpriseBrakeEvent : MonoBehaviour
 
     void Update()
     {
-        // Nếu sự kiện phanh được kích hoạt, giảm tốc độ nhanh chóng về mức brakeSpeed
+        // If a braking event is triggered, rapidly reduce speed to brakespeed.
         if (isBraking)
         {
             currentSpeed = Mathf.MoveTowards(currentSpeed, brakeSpeed, deceleration * Time.deltaTime);
         }
 
-        // Di chuyển xe về phía trước (theo hướng trục của xe)
+        // Move the vehicle forward (along the vehicle's axis).
         transform.Translate(Vector3.forward * currentSpeed * Time.deltaTime);
     }
 
-    // HÀM EVENT DRIVEN: Sẽ được gọi từ bên ngoài để kích hoạt phanh
+    // EVENT DRIVEN FUNCTION: Will be called from the outside to activate the brake.
     public void TriggerEmergencyBrake()
     {
         if (!isBraking)
         {
             isBraking = true;
             Debug.LogWarning("EVENT ACTIVATED: Xe phía trước phanh gấp!");
-            if (brakeLights != null) brakeLights.SetActive(true); // Bật đèn phanh đỏ rực
+            if (brakeLights != null) brakeLights.SetActive(true); // Turn on the bright red brake lights.
         }
     }
 }
