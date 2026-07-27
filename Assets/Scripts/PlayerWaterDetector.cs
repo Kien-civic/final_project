@@ -2,25 +2,25 @@
 
 public class PlayerWaterDetector : MonoBehaviour
 {
-    [Header("Cấu hình quét nước")]
-    public float waterLevelY = -0.5f; // ĐỘ CAO TRỤC Y CỦA MẶT NƯỚC SÔNG (Hãy sửa con số này theo đúng trục Y khối nước của bạn)
-    public float checkDistance = 1.5f; // Khoảng cách từ gầm xe xuống nước để tính là bị chìm
+    [Header("Water Scan Configuration")]
+    public float waterLevelY = -0.5f; // The Y-axis height of the river's surface (Adjust this value according to your water object's Y-axis)
+    public float checkDistance = 1.5f; // The distance from the underside of the vehicle to the water is used to determine if it is submerged.
 
     void Update()
     {
-        // Cách 1: Kiểm tra trực tiếp tọa độ trục Y của xe
-        // Nếu xe mất lái rời khỏi phà và tụt sâu xuống thấp hơn mặt nước sông
+        // Method 1: Directly check the Y-axis coordinates of the vehicle.
+        // If the vehicle loses control, veers off the ferry, and plunges below the river's surface.
         if (transform.position.y < (waterLevelY - 0.2f))
         {
             TriggerWaterFailure("Xe bị chìm sâu dưới mặt nước!");
             return;
         }
 
-        // Cách 2: Bắn một tia Raycast từ tâm xe thẳng xuống dưới gầm
+        // Method 2: Shoot a Raycast beam from the center of the car straight down under the chassis.
         RaycastHit hit;
         if (Physics.Raycast(transform.position, Vector3.down, out hit, checkDistance))
         {
-            // Nếu tia quét trúng vào khối có tên là WaterFailureTrigger hoặc có Layer là Water
+            // If the scan beam hits a block named WaterFailureTrigger or with a Water layer.
             if (hit.collider.gameObject.name == "WaterFailureTrigger" || hit.collider.gameObject.layer == LayerMask.NameToLayer("Water"))
             {
                 TriggerWaterFailure("Bánh xe chạm vào vùng nước tử thần!");
@@ -32,18 +32,18 @@ public class PlayerWaterDetector : MonoBehaviour
     {
         Debug.Log("-> [XỬ PHẠT BACKEND] " + reason);
 
-        // Gọi bộ quản lý màn chơi để xử thua
+        // Call the game manager to declare a loss.
         RiverLevelManager manager = FindObjectOfType<RiverLevelManager>();
         if (manager != null && manager.score > 0)
         {
             manager.DeductPoints(manager.score, "Lao xuống sông chìm xe");
 
-            // Hủy luôn script này để tránh gọi lệnh trừ điểm liên tục nhiều lần
+            // Cancel this script to avoid repeatedly calling the point deduction command.
             this.enabled = false;
         }
     }
 
-    // Vẽ tia quét màu đỏ trong cửa sổ Scene để bạn dễ dàng quan sát bằng mắt
+    // Draw a red scan line in the Scene window so you can easily observe it with your eyes.
     void OnDrawGizmos()
     {
         Gizmos.color = Color.red;
