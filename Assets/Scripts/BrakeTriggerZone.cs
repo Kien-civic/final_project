@@ -2,25 +2,25 @@
 
 public class BrakeTriggerZone : MonoBehaviour
 {
-    // Thay vì kéo 1 xe, nếu có nhiều xe, ta có thể dùng mảng hoặc chỉ kích hoạt xe đi qua
+    // Instead of dragging a single car, if there are multiple cars, we can use an array or only activate the car that passes through.
     public AISameDirectionController targetAICar;
 
-    private bool hasTriggered = false; // Biến cờ bảo vệ chống lặp vô hạn
+    private bool hasTriggered = false; // Flag to prevent infinite loop
 
     void OnTriggerEnter(Collider other)
     {
-        // Kiểm tra xem có đúng là xe người chơi đâm vào không và bẫy đã dùng chưa
+        // Check if the player's car actually crashed into it and if any traps were used.
         if (other.CompareTag("Player") && !hasTriggered)
         {
             if (targetAICar != null)
             {
-                hasTriggered = true; // Khóa bẫy lại ngay lập tức!
+                hasTriggered = true; // Lock the trap immediately!
 
-                targetAICar.TriggerEmergencyBrake(); // Gọi xe phanh
+                targetAICar.TriggerEmergencyBrake(); // Call the car to brake
 
                 Debug.LogWarning("BẪY ĐÃ KÍCH HOẠT VÀ TỰ KHÓA AN TOÀN!");
 
-                // Hủy luôn hộp trigger này khỏi màn hình scene để giải phóng bộ nhớ
+                // Remove this trigger box from the scene screen to free up memory.
                 Destroy(gameObject, 0.1f);
             }
         }
