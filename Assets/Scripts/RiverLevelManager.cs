@@ -1,25 +1,25 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using UnityEngine.SceneManagement; // BẮT BUỘC THÊM: Để sử dụng lệnh nạp lại màn chơi
+using UnityEngine.SceneManagement; 
 
 public class RiverLevelManager : MonoBehaviour
 {
-    [Header("Hệ thống điểm số")]
+    [Header("Score System")]
     public int score = 100;
     public TextMeshProUGUI scoreText;
-    public GameObject losePanel; // Khung bảng báo thua cuộc
+    public GameObject losePanel; // Lose announcement board
 
     void Start()
     {
         UpdateScoreUI();
         if (losePanel != null) losePanel.SetActive(false);
 
-        // Luôn đảm bảo thời gian chạy bình thường khi bắt đầu lại màn chơi
+        // Always ensure normal runtime when restarting the game.
         Time.timeScale = 1f;
     }
 
-    // Hàm dùng chung để trừ điểm khi vi phạm luật bến phà hoặc lao xuống nước
+    // Common function to deduct points when violating ferry rules or falling into water
     public void DeductPoints(int points, string reason)
     {
         score -= points;
@@ -28,7 +28,7 @@ public class RiverLevelManager : MonoBehaviour
         UpdateScoreUI();
         Debug.Log("VI PHẠM: " + reason + "! Bị trừ " + points + " điểm.");
 
-        // Nếu điểm bằng 0 thì dừng game và báo thua cuộc
+        // If the score reaches 0, stop the game and declare a loss
         if (score <= 0)
         {
             GameOver();
@@ -46,21 +46,20 @@ public class RiverLevelManager : MonoBehaviour
     void GameOver()
     {
         if (losePanel != null) losePanel.SetActive(true);
-        Time.timeScale = 0f; // Dừng toàn bộ màn chơi
+        Time.timeScale = 0f; // Stop the entire game
         Debug.Log("-> [GAME OVER] Người chơi đã thua cuộc tại bến phà!");
     }
 
-    // --- HÀM MỚI: GỌI KHI ẤN NÚT RESTART TRÊN LOSE PANEL ---
+    // --- NEW FUNCTION: CALL WHEN THE RESTART BUTTON IS PRESSED ON THE LOSE PANEL ---
     public void RestartLevel()
     {
-        // Trả lại thời gian chạy thực tế trước khi load scene để tránh game bị đóng băng
+        // Restore the actual runtime before loading the scene to avoid the game freezing.
         Time.timeScale = 1f;
 
-        // Tự động lấy tên của Scene hiện tại (Level 8) để nạp lại từ đầu
+        // Automatically retrieve the name of the current Scene (Level 8) to reload from scratch.
         string currentSceneName = SceneManager.GetActiveScene().name;
         SceneManager.LoadScene(currentSceneName);
 
         Debug.Log("-> [SYSTEM] Đã nạp lại màn chơi: " + currentSceneName);
     }
-}
 }
