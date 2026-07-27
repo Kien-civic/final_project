@@ -7,20 +7,20 @@ public class AIVehicleSpawner : MonoBehaviour
     [System.Serializable]
     public class LevelSplineConfig
     {
-        public SplineContainer splineContainer; // Đường spline của tuyến đường này
-        public bool isOneWay = false;           // Tuyến đường này là 1 chiều hay 2 chiều?
-        public float laneOffsetAmount = 2.4f;   // Độ rộng để dạt làn
+        public SplineContainer splineContainer; // Spline curve of this route
+        public bool isOneWay = false;           // Is this route one-way or two-way?
+        public float laneOffsetAmount = 2.4f;   // Lane departure width
     }
 
-    [Header("Tuyến Đường Trong Màn Chơi")]
-    public List<LevelSplineConfig> trafficRoutes; // Danh sách các con đường xe có thể chạy
+    [Header("Traffic Routes in Level")]
+    public List<LevelSplineConfig> trafficRoutes; // List of roads that vehicles can travel on.
 
-    [Header("Danh Sách Mẫu Xe AI (Prefabs)")]
-    public List<GameObject> vehiclePrefabs;       // Kéo các Model xe AI (hoặc người/chó) vào đây
+    [Header("AI Vehicle Prefabs")]
+    public List<GameObject> vehiclePrefabs;       // Drag AI (or human/dog) car models here.
 
-    [Header("Cấu Hình Ngẫu Nhiên (Random Settings)")]
-    public int maxVehiclesInLevel = 10;           // Số lượng xe tối đa muốn sinh ra trong màn
-    public Vector2 speedRange = new Vector2(5f, 15f); // Tốc độ ngẫu nhiên từ Min đến Max
+    [Header("Random Settings")]
+    public int maxVehiclesInLevel = 10;           // The maximum number of cars you want to spawn in the screen.
+    public Vector2 speedRange = new Vector2(5f, 15f); // Random speed from Min to Max
 
     void Start()
     {
@@ -37,37 +37,36 @@ public class AIVehicleSpawner : MonoBehaviour
     {
         for (int i = 0; i < maxVehiclesInLevel; i++)
         {
-            // 1. Chọn ngẫu nhiên một mẫu xe trong danh sách Prefabs công đức
+            // 1. Randomly select a car model from the list of meritorious Prefabs.
             GameObject selectedPrefab = vehiclePrefabs[Random.Range(0, vehiclePrefabs.Count)];
 
-            // 2. Chọn ngẫu nhiên một tuyến đường Spline trong map để thả xe xuống
+            // 2. Randomly select a Spline route on the map to drop the vehicle off.
             LevelSplineConfig selectedRoute = trafficRoutes[Random.Range(0, trafficRoutes.Count)];
 
-            // 3. Tiến hành sinh xe (Instantiate) vào thế giới game
+            // 3. Initiate vehicle creation (Instantiate) into the game world.
             GameObject newVehicle = Instantiate(selectedPrefab, Vector3.zero, Quaternion.identity);
 
-            // 4. Lấy script di chuyển trên xe ra để nhồi thông số ngẫu nhiên vào
+            // 4. Extract the vehicle movement script and stuff random parameters into it.
             AISameDirectionController controller = newVehicle.GetComponent<AISameDirectionController>();
 
             if (controller != null)
             {
-                // Gán đường chạy ngẫu nhiên trúng tuyển
+                // Assign a random route to the winning team.
                 controller.splineContainer = selectedRoute.splineContainer;
 
-                // RANDOM VỊ TRÍ XUẤT PHÁT: Cho rải rác từ 0.0 (đầu đường) đến 0.9 (gần cuối đường)
-                controller.startProgress = Random.Range(0f, 0.9f);
+                // RANDOM STARTING POSITION: Scattered from 0.0 (beginning of the line) to 0.9 (near the end of the line)troller.startProgress = Random.Range(0f, 0.9f);
 
-                // RANDOM TỐC ĐỘ: Mỗi xe phóng một tốc độ khác nhau không ai giống ai
+                // RANDOM SPEED: Each car speeds at a different rate; no two are alike.
                 controller.normalSpeed = Random.Range(speedRange.x, speedRange.y);
 
-                // RANDOM LÀN ĐƯỜNG (Nếu là đường 2 chiều)
+                // RANDOM LANE ASSIGNMENT (If it's a two-way street)
                 if (!selectedRoute.isOneWay)
                 {
-                    // Ngẫu nhiên ra số âm (đi làn trái/cùng chiều) hoặc số dương (làn phải/ngược chiều)
+                    // Randomly generated negative numbers (left lane/same direction) or positive numbers (right lane/opposite direction).
                     bool goSameDirection = (Random.value > 0.5f);
                     controller.laneOffset = goSameDirection ? -selectedRoute.laneOffsetAmount : selectedRoute.laneOffsetAmount;
 
-                    // Nếu đi ngược chiều, ta xoay đầu xe lại 180 độ so với hướng gốc của Spline
+                    // If going in the opposite direction, we rotate the vehicle 180 degrees relative to the original direction of the Spline.
                     if (!goSameDirection)
                     {
                         controller.rotationOffset = new Vector3(0, 180f, 0);
@@ -75,10 +74,11 @@ public class AIVehicleSpawner : MonoBehaviour
                 }
                 else
                 {
-                    // Nếu là đường 1 chiều, ép dạt sang làn cùng chiều mặc định
+                    // If it's a one-way street, it will automatically move into the same-direction lane.
                     controller.laneOffset = -selectedRoute.laneOffsetAmount;
                 }
             }
         }
     }
 }
+
