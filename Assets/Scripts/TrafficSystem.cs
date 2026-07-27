@@ -4,7 +4,7 @@ using System.Collections;
 
 public class TrafficSystem : MonoBehaviour
 {
-    // --- KHỞI TẠO THƯ VIỆN SINGLETON (BỘ QUẢN LÝ TẬP TRUNG) ---
+    // --- INITIATING THE SINGLETON LIBRARY (CENTRALIZED MANAGEMENT) ---
     public static TrafficSystem Instance { get; private set; }
 
     public enum LightColor { Green, Yellow, Red }
@@ -33,14 +33,14 @@ public class TrafficSystem : MonoBehaviour
 
     void Awake()
     {
-        // Thiết lập cấu trúc thư viện quản lý tập trung độc nhất
+        // Establish a unique, centralized library management structure.
         if (Instance == null)
         {
             Instance = this;
         }
         else if (Instance != this)
         {
-            // Tránh việc có nhiều bộ TrafficSystem đá nhau trong một Scene
+            // Avoid having multiple TrafficSystem sets conflicting with each other in a single Scene.
             Destroy(gameObject);
             return;
         }
@@ -52,7 +52,7 @@ public class TrafficSystem : MonoBehaviour
         timer = greenDuration;
         UpdateVisualLights();
 
-        // Tự động đi tìm ô chữ Warning trên màn hình nếu quên chưa kéo thả
+        // Automatically locates the Warning text box on the screen if you forgot to drag and drop it.
         if (warningText == null)
         {
             GameObject warningObj = GameObject.Find("WarningUIText");
@@ -98,7 +98,7 @@ public class TrafficSystem : MonoBehaviour
         if (yellowLampObject != null) yellowLampObject.SetActive(currentLight == LightColor.Yellow);
         if (redLampObject != null) redLampObject.SetActive(currentLight == LightColor.Red);
     }
-    // ĐÃ THÊM LẠI: Hàm này giúp sửa triệt để lỗi CS1061 ở script TriggerZone
+    // ADDED AGAIN: This function completely fixes the CS1061 error in the TriggerZone script.
     public void CheckVehicleViolation(Collider other)
     {
         if (other.CompareTag("Player"))
@@ -107,10 +107,10 @@ public class TrafficSystem : MonoBehaviour
             {
                 Debug.LogWarning("-> [CONSOLE] Phát hiện xe vượt đèn đỏ qua TriggerZone!");
 
-                // Gọi lệnh hiển thị chữ đỏ rực lên màn hình chính thông qua Singleton
+                // Use Singleton to display bright red text on the home screen.
                 ShowNotification("VI PHẠM: Vượt đèn đỏ! Trừ 50 điểm", Color.red);
 
-                // Tiến hành trừ điểm trực tiếp trên xe
+                // Points will be deducted directly from the vehicle.
                 AdvancedCarController carScript = other.GetComponent<AdvancedCarController>();
                 if (carScript != null)
                 {
@@ -121,7 +121,7 @@ public class TrafficSystem : MonoBehaviour
     }
 
 
-    // HÀM HIỂN THỊ THÔNG BÁO CHUẨN - CHỐNG NUỐT CHỮ TUYỆT ĐỐI
+    // STANDARD NOTIFICATION DISPLAY FUNCTION - ABSOLUTELY NO CHARACTER SWALLOWING
     public void ShowNotification(string message, Color color)
     {
         if (warningText != null)
