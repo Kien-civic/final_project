@@ -1,33 +1,33 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using TMPro; // Bắt buộc thêm thư viện này để điều khiển chữ trên nút Music
+using TMPro; 
 
 public class MainMenu : MonoBehaviour
 {
-    [Header("Giao diện Panels")]
+    [Header("UI Panels")]
     public GameObject howToPlayPanel;
-    public GameObject settingsPanel; // Kéo SettingsPanel vào đây
+    public GameObject settingsPanel; // Drag the Settings Panel here.
 
-    [Header("Cấu hình Âm thanh (Audio)")]
-    public AudioSource bgmAudioSource;       // Kéo AudioManager (có AudioSource) vào đây
-    public TextMeshProUGUI musicButtonText;  // Kéo ô Text (TMP) của nút nhạc vào đây
+    [Header("Audio Configuration")]
+    public AudioSource bgmAudioSource;       // Drag the AudioManager (with AudioSource) here
+    public TextMeshProUGUI musicButtonText;  // Drag the Text (TMP) of the music button here
 
-    private bool isMusicOn = true; // Trạng thái nhạc hiện tại
+    private bool isMusicOn = true; // Current music state
 
     void Start()
     {
-        // Ẩn các bảng khi vừa vào game
+        // Hide panels when the game starts
         if (howToPlayPanel != null) howToPlayPanel.SetActive(false);
         if (settingsPanel != null) settingsPanel.SetActive(false);
 
-        // ĐỌC DỮ LIỆU ĐÃ LƯU: Kiểm tra xem người chơi trước đó tắt hay bật nhạc
+        // READ SAVED DATA: Check if the player previously turned off or on the music
         if (PlayerPrefs.HasKey("MusicMuted"))
         {
-            // Nếu giá trị là 1 tức là đã tắt (Mute), ngược lại là bật
+            // If the value is 1, it means muted, otherwise it's on
             isMusicOn = PlayerPrefs.GetInt("MusicMuted") == 0;
         }
 
-        // Áp dụng trạng thái nhạc ngay khi khởi động
+        // Apply the music state immediately on startup
         ApplyMusicState();
     }
 
@@ -43,11 +43,11 @@ public class MainMenu : MonoBehaviour
         }
     }
 
-    // --- MỤC HƯỚNG DẪN CHƠI (HOW TO PLAY) ---
+    // --- HOW TO PLAY ---
     public void OpenHowToPlay() { if (howToPlayPanel != null) howToPlayPanel.SetActive(true); }
     public void CloseHowToPlay() { if (howToPlayPanel != null) howToPlayPanel.SetActive(false); }
 
-    // --- MỤC CÀI ĐẶT (SETTINGS) ---
+    // --- SETTINGS ---
     public void OpenSettings()
     {
         if (settingsPanel != null) settingsPanel.SetActive(true);
@@ -58,16 +58,16 @@ public class MainMenu : MonoBehaviour
         if (settingsPanel != null) settingsPanel.SetActive(false);
     }
 
-    // --- HÀM TỰ ĐỘNG BẬT / T T NHẠC NỀN ---
+    // --- TOGGLE MUSIC ---
     public void ToggleMusic()
     {
-        isMusicOn = !isMusicOn; // Đổi trạng thái (Bật thành Tắt, Tắt thành Bật)
+        isMusicOn = !isMusicOn; // Toggle the state (On to Off, Off to On)
 
-        // Lưu cài đặt âm thanh vào bộ nhớ máy (0 = Bật, 1 = Tắt)
+        // Save the audio settings to the device memory (0 = On, 1 = Off)
         PlayerPrefs.SetInt("MusicMuted", isMusicOn ? 0 : 1);
         PlayerPrefs.Save();
 
-        // Thực thi lệnh bật tắt thực tế và đổi chữ UI
+        // Apply the actual toggle and update the UI text
         ApplyMusicState();
     }
 
@@ -75,13 +75,13 @@ public class MainMenu : MonoBehaviour
     {
         if (bgmAudioSource != null)
         {
-            // Nếu isMusicOn = true thì mute = false (phát nhạc) và ngược lại
+            // If isMusicOn = true then mute = false (play music) and vice versa
             bgmAudioSource.mute = !isMusicOn;
         }
 
         if (musicButtonText != null)
         {
-            // Tự động cập nhật chữ hiển thị trên nút bấm tương ứng
+            // Automatically update the text displayed on the button accordingly
             musicButtonText.text = isMusicOn ? "MUSIC: ON" : "MUSIC: OFF";
         }
     }
