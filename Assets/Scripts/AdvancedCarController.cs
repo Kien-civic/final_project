@@ -1,13 +1,13 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI; // Đã thêm: Giúp hỗ trợ các thành phần UI cơ bản
+using UnityEngine.UI; // Added: Helps support basic UI elements
 using TMPro;
 using System.Collections;
 
 public class AdvancedCarController : MonoBehaviour
 {
     [Header("UI Panels Settings")]
-    public GameObject finishPanel; // Khung chứa bảng Thắng (Finish)
+    public GameObject finishPanel; // Frame containing the Winnings table (Finish)
 
     public enum GearState { P, R, N, D }
 
@@ -17,23 +17,23 @@ public class AdvancedCarController : MonoBehaviour
     public TMP_Text speedText;
     private Vector3 lastPosition;
 
-    [Header("Hộp Số (Gear System)")]
+    [Header("Gear System")]
     public GearState currentGear = GearState.P;
     public TextMeshProUGUI gearUIText;
     public TextMeshProUGUI scoreText;
 
-    [Header("Hệ thống Đích (Finish System)")]
-    public TextMeshProUGUI finishUIText; // ĐÃ GIỮ LẠI DUY NHẤT: Biến TextMeshProUGUI không còn bị trùng tên
+    [Header("Finish System")]
+    public TextMeshProUGUI finishUIText; // ONLY ONE RETAINED: The TextMeshProUGUI variable no longer has a duplicate name.
 
-    [Header("Giao diện Thua/Thắng")]
-    public GameObject restartButtonObject; // Ô kéo thả nút Báo Thua (Repeat) hoặc Lose Panel
+    [Header("Lose/Win UI")]
+    public GameObject restartButtonObject; // Drag and drop the Repeat or Lose Panel button.
 
-    [Header("Thông số xe (Car Settings)")]
+    [Header("Car Settings")]
     public float motorForce = 7000f;
     public float brakeForce = 3000f;
     public float maxSteerAngle = 30f;
 
-    [Header("Liên kết bánh xe (Wheel Colliders)")]
+    [Header("Wheel Colliders")]
     public WheelCollider frontLeftWheel;
     public WheelCollider frontRightWheel;
     public WheelCollider rearLeftWheel;
@@ -51,14 +51,14 @@ public class AdvancedCarController : MonoBehaviour
 
         Time.timeScale = 1f;
 
-        // LẤY RA CHỈ SỐ INDEX CỦA MÀN CHƠI HIỆN TẠI VÀ LƯU VÀO MÁY
+        // EXTRACT THE CURRENT GAME INDEX AND SAVE IT TO THE DEVICE.
         int currentSceneIndex = UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex;
 
-        // Chỉ lưu nếu màn chơi đó lớn hơn màn Chọn màn (LevelSelect) và MainMenu
+        // Only save if the level index is greater than the LevelSelect and MainMenu
         if (currentSceneIndex >= 2)
         {
             PlayerPrefs.SetInt("SavedLevelIndex", currentSceneIndex);
-            PlayerPrefs.Save(); // Khóa dữ liệu vào ổ cứng của thiết bị
+            PlayerPrefs.Save(); // Lock data to the device's hard drive.
             Debug.Log("-> [BACKEND] Đã tự động lưu tiến trình chơi: Level Index " + currentSceneIndex);
         }
     }
@@ -190,11 +190,11 @@ public class AdvancedCarController : MonoBehaviour
                 break;
         }
 
-        // Chỉ truyền lực cho bánh sau
+        // Power is only transmitted to the rear wheel.
         rearLeftWheel.motorTorque = motorInput;
         rearRightWheel.motorTorque = motorInput;
 
-        // Phanh cả 4 bánh
+        // Brakes on all four wheels
         frontLeftWheel.brakeTorque = brakeInput;
         frontRightWheel.brakeTorque = brakeInput;
         rearLeftWheel.brakeTorque = brakeInput;
@@ -246,7 +246,7 @@ public class AdvancedCarController : MonoBehaviour
         }
     }
 
-    // --- CÁC HÀM DÀNH CHO NÚT BẤM ---
+    // --- FUNCTIONS FOR BUTTON CLICKS ---
 
     public void ClickRepeat()
     {
