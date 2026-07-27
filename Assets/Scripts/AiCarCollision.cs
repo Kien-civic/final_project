@@ -2,21 +2,21 @@
 
 public class AICarCollision : MonoBehaviour
 {
-    [Header("Cấu hình phạt va chạm")]
-    public int penaltyPoints = 50; // Số điểm phạt khi va chạm là 50 điểm
+    [Header("Collision penalty configuration")]
+    public int penaltyPoints = 50; // The penalty points for a collision are 50 points.
 
-    // Hàm này tự động kích hoạt khi có va chạm vật lý (Collision) giữa 2 khối Collider
+    // This function is automatically activated when there is a physical collision between two Collider blocks.
     private void OnCollisionEnter(Collision collision)
     {
-        // Kiểm tra xem vật thể đâm vào xe AI này có phải là xe người chơi (Player) hay không
+        // Check if the object that crashed into this AI vehicle is a player's vehicle.
         if (collision.gameObject.CompareTag("Player"))
         {
-            // 1. Tìm script điều khiển trên xe người chơi để thực hiện trừ điểm
+            // 1. Find the player's vehicle control script to deduct points.
             AdvancedCarController playerCar = collision.gameObject.GetComponent<AdvancedCarController>();
 
             if (playerCar != null)
             {
-                // Trừ 50 điểm trong dữ liệu của xe
+                // Deduct 50 points from the vehicle's data.
                 playerCar.score -= penaltyPoints;
                 Debug.LogWarning($"VA CHẠM GIAO THÔNG: Va chạm với xe AI trên đường! Trừ {penaltyPoints} điểm.");
 
