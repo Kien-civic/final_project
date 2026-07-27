@@ -2,23 +2,24 @@
 
 public class KeepAudio : MonoBehaviour
 {
-    // Tạo một biến static để quản lý độc nhất (Singleton Pattern)
+    // Create a static variable to manage uniqueness (Singleton Pattern)
     private static KeepAudio instance;
 
     void Awake()
     {
-        // Kiểm tra xem đã có một bản sao của AudioManager nào tồn tại chưa
+        // Check if a copy of AudioManager already exists.
         if (instance == null)
         {
             instance = this;
 
-            // LỆNH QUAN TRỌNG: Giữ đối tượng này không bị xóa khi chuyển Scene
+            // IMPORTANT COMMAND: Keep this object from being deleted when switching Scenes
             DontDestroyOnLoad(gameObject);
         }
         else
         {
-            // Nếu quay lại MainMenu mà đã có nhạc đang chạy, xóa ngay bản sao mới tạo để tránh trùng nhạc
+            // If returning to the MainMenu and music is already playing, immediately delete the newly created copy to avoid duplicate music
             Destroy(gameObject);
         }
     }
 }
+
