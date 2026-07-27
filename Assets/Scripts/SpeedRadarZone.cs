@@ -7,10 +7,10 @@ public class SpeedRadarZone : MonoBehaviour
     private bool isPlayerOnHighway = false;
     private float penaltyTimer = 0f;
 
-    [Header("Liên kết hệ thống")]
+    [Header("System Linking")]
     public TrafficSystem trafficSystem;
 
-    // --- THÊM BIẾN CỜ HIỆU NÀY ĐỂ CHẶN LẶP CHỮ ---
+    // ADD THIS FLAG VARIABLE TO PREVENT TEXT REPETITION
     private bool isTextDisplayed = false;
 
     void OnTriggerEnter(Collider other)
@@ -23,12 +23,12 @@ public class SpeedRadarZone : MonoBehaviour
             if (playerCar != null && carRigidbody != null)
             {
                 isPlayerOnHighway = true;
-                penaltyTimer = 0f; // Cho người chơi thời gian chuẩn bị (ví dụ 3 giây)
-                isTextDisplayed = false; // Reset cờ khi vào vùng mới
+                penaltyTimer = 0f; // Give the player time to prepare (e.g., 3 seconds).
+                isTextDisplayed = false; // Reset the flag when entering a new area.
 
                 if (trafficSystem != null)
                 {
-                    // Chỉ thông báo chớm vào vùng 1 lần duy nhất
+                    // Only notify you once you've just entered the zone.
                     trafficSystem.ShowNotification("ĐÃ VÀO CAO TỐC! TỐC ĐỘ: 60 - 100 KM/H", new Color(1f, 0.6f, 0f));
                 }
                 Debug.Log("Đã vào đoạn đường cao tốc! Giới hạn: 60 - 100 km/h.");
@@ -40,18 +40,18 @@ public class SpeedRadarZone : MonoBehaviour
     {
         if (isPlayerOnHighway && carRigidbody != null && playerCar != null)
         {
-            // Tính vận tốc hiện tại của xe (km/h)
+            // Calculate the current speed of the vehicle (km/h).
             float currentSpeedKMH = carRigidbody.linearVelocity.magnitude * 3.6f;
 
-            // Tính toán thời gian trì hoãn phạt ban đầu (Nếu có logic đếm ngược 3s)
+            // Calculate the initial penalty delay (if there is a 3-second countdown logic)
             penaltyTimer += Time.deltaTime;
 
-            if (penaltyTimer >= 3f) // Sau 3 giây chuẩn bị, bắt đầu bắt lỗi
+            if (penaltyTimer >= 3f) // After 3 seconds of preparation, start checking for violations
             {
-                // KIỂM TRA VI PHẠM: Quá tốc độ tối đa hoặc dưới tốc độ tối thiểu
+                // CHECK FOR VIOLATIONS: Exceeding the maximum speed or falling below the minimum speed
                 if (currentSpeedKMH > 100f || currentSpeedKMH < 60f)
                 {
-                    // QUAN TRỌNG: Chỉ bật chữ nếu chữ chưa được hiển thị
+                    // IMPORTANT: Only display the text if it hasn't been shown yet
                     if (!isTextDisplayed && trafficSystem != null)
                     {
                         isTextDisplayed = true; // Khóa lệnh lại ngay lập tức!
@@ -62,16 +62,16 @@ public class SpeedRadarZone : MonoBehaviour
 
                         trafficSystem.ShowNotification(errorMsg, Color.red);
 
-                        // Thực hiện trừ điểm của người chơi (Ví dụ trừ 10 điểm hành chính)
+                        // Deduct points from the player (e.g., deduct 10 administrative points)
                         playerCar.score -= 10;
                     }
                 }
                 else
                 {
-                    // Nếu xe đã điều chỉnh tốc độ về dải an toàn (60 - 100 km/h)
+                    // If the vehicle has adjusted its speed back to the safe range (60 - 100 km/h)
                     if (isTextDisplayed)
                     {
-                        isTextDisplayed = false; // Mở khóa cờ hiệu để có thể bắt lỗi tiếp nếu tái phạm
+                        isTextDisplayed = false; // Unlock the flag so that violations can be detected again if repeated
                     }
                 }
             }
@@ -85,7 +85,7 @@ public class SpeedRadarZone : MonoBehaviour
             isPlayerOnHighway = false;
             playerCar = null;
             carRigidbody = null;
-            isTextDisplayed = false; // Reset sạch sẽ khi ra khỏi vùng
+            isTextDisplayed = false; // Reset the flag when exiting the area
 
             if (trafficSystem != null)
             {
