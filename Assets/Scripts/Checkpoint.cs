@@ -1,5 +1,4 @@
-﻿
-using UnityEngine;
+﻿using UnityEngine;
 
 public class Checkpoint : MonoBehaviour
 {
@@ -14,7 +13,7 @@ public class Checkpoint : MonoBehaviour
     {
         rend = GetComponent<Renderer>();
 
-        // Tìm LevelManager
+        // Find LevelManager
         levelManager = FindObjectOfType<LevelManager>();
 
         rend.material.color = Color.white;
@@ -26,12 +25,12 @@ public class Checkpoint : MonoBehaviour
         {
             completed = true;
 
-            // Đổi vàng
+            // Change Yellow
             rend.material.color = Color.yellow;
 
             Debug.Log("Checkpoint " + checkpointID + " completed!");
 
-            // Báo về LevelManager
+            // Report to LevelManager
             if (checkpointID == 1)
             {
                 levelManager.checkpoint1Done = true;
@@ -44,6 +43,13 @@ public class Checkpoint : MonoBehaviour
         }
     }
 }
+
+
+
+
+
+
+
 
 
 
