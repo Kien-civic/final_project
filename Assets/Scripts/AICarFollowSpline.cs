@@ -1,10 +1,10 @@
 using UnityEngine;
-using UnityEngine.Splines; // Bắt buộc phải có thư viện này
+using UnityEngine.Splines; 
 
 public class AICarFollowSpline : MonoBehaviour
 {
-    public SplineContainer splineContainer; // Kéo thả Object đường đi vào đây
-    public float speed = 15f;               // Tốc độ xe AI (m/s) ~ 54 km/h
+    public SplineContainer splineContainer; // Drag and drop the path object here.
+    public float speed = 15f;               // AI vehicle speed (m/s) ~ 54 km/h
 
     [Range(0f, 1f)]
     public float startingProgress = 0f;
@@ -16,43 +16,43 @@ public class AICarFollowSpline : MonoBehaviour
     {
         if (splineContainer != null)
         {
-            // Tính toán tổng chiều dài quãng đường Spline
+            // Calculate the total length of the Spline path.
             splineLength = splineContainer.CalculateLength();
             progress = startingProgress;
         }
     }
 
-    [Header("Cấu hình Độ cao xe")]
-    [Tooltip("Độ cao nhích lên để bánh xe chạm đúng mặt đất, tránh bị chìm (Ví dụ: 0.5, 1, 1.2...)")]
+    [Header("Vehicle Height Configuration")]
+    [Tooltip("Height offset to ensure the wheels touch the ground correctly, avoiding sinking (e.g., 0.5, 1, 1.2...)")]
     public float heightOffset = 0.5f;
 
     void Update()
     {
         if (splineContainer == null || splineLength == 0) return;
 
-        // Tính toán tiến trình (0 to 1)
+        // Calculate the process (0 to 1)
         progress += (speed * Time.deltaTime) / splineLength;
-        if (progress > 1f) progress = 0f; // Lặp lại đường đi
+        if (progress > 1f) progress = 0f; // Loop the path
 
-        // --- ĐOẠN CODE CẬP NHẬT ĐỂ ĐẨY XE LÊN MẶT ĐẤT ---
+        // --- CODE TO UPDATE VEHICLE HEIGHT TO MATCH THE GROUND ---
 
-        // 1. Lấy vị trí gốc trên đường Spline (nằm sát mặt đất)
+        // 1. Get the base position on the Spline (close to the ground)
         Vector3 splinePosition = (Vector3)splineContainer.EvaluatePosition(progress);
 
-        // 2. CỘNG THÊM độ cao bù trừ vào trục Y trước khi gán cho xe
+        // 2. ADD the height offset to the Y axis before assigning to the vehicle
         splinePosition.y += heightOffset;
         transform.position = splinePosition;
 
-        // 3. Lấy hướng tiếp tuyến (hướng đi của Spline)
+        // 3. Get the tangent direction (direction of the Spline)
         Vector3 tangent = (Vector3)splineContainer.EvaluateTangent(progress);
 
-        // 4. Nếu có hướng đi, quay xe nhìn theo hướng đó
+        // 4. If there is a direction, rotate the vehicle to face that direction
         if (tangent != Vector3.zero)
         {
-            // Dùng Quaternion.LookRotation để tạo góc xoay nhìn về hướng đi
+            // Use Quaternion.LookRotation to create a rotation that looks in the direction of the tangent
             transform.rotation = Quaternion.LookRotation(tangent);
 
-            // MẸO: Nếu xe vẫn bị quay ngang, bạn có thể cần bù một góc 90 độ
+            // TIP: If the vehicle is still rotated incorrectly, you may need to offset by 90 degrees
             // transform.rotation = Quaternion.LookRotation(tangent) * Quaternion.Euler(0, 90, 0); 
             transform.rotation = Quaternion.LookRotation(tangent) * Quaternion.Euler(0, -90, 0);
         }
