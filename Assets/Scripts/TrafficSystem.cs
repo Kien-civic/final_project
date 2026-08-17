@@ -1,10 +1,10 @@
-﻿using UnityEngine;
+using UnityEngine;
 using TMPro;
 using System.Collections;
+using System.Collections.Generic; 
 
 public class TrafficSystem : MonoBehaviour
 {
-    // --- INITIATING THE SINGLETON LIBRARY (CENTRALIZED MANAGEMENT) ---
     public static TrafficSystem Instance { get; private set; }
 
     public enum LightColor { Green, Yellow, Red }
@@ -22,9 +22,13 @@ public class TrafficSystem : MonoBehaviour
     public GameObject yellowLampObject;
     public GameObject redLampObject;
 
-    [Header("Liên kết UI hiển thị (Kéo thả từ Canvas của Level hiện tại)")]
+    [Header("Liên kết UI hiển thị")]
     public TextMeshProUGUI warningText;
     public TextMeshProUGUI scoreUIText;
+
+    // ---Variables that store a fixed list of violations.
+    [HideInInspector]
+    public List<string> violationLog = new List<string>();
 
     private float timer;
     private Coroutine clearTextCoroutine;
@@ -33,14 +37,12 @@ public class TrafficSystem : MonoBehaviour
 
     void Awake()
     {
-        // Establish a unique, centralized library management structure.
         if (Instance == null)
         {
             Instance = this;
         }
         else if (Instance != this)
         {
-            // Avoid having multiple TrafficSystem sets conflicting with each other in a single Scene.
             Destroy(gameObject);
             return;
         }
@@ -52,7 +54,6 @@ public class TrafficSystem : MonoBehaviour
         timer = greenDuration;
         UpdateVisualLights();
 
-        // Automatically locates the Warning text box on the screen if you forgot to drag and drop it.
         if (warningText == null)
         {
             GameObject warningObj = GameObject.Find("WarningUIText");
@@ -98,7 +99,7 @@ public class TrafficSystem : MonoBehaviour
         if (yellowLampObject != null) yellowLampObject.SetActive(currentLight == LightColor.Yellow);
         if (redLampObject != null) redLampObject.SetActive(currentLight == LightColor.Red);
     }
-    // ADDED AGAIN: This function completely fixes the CS1061 error in the TriggerZone script.
+
     public void CheckVehicleViolation(Collider other)
     {
         if (other.CompareTag("Player"))
@@ -107,10 +108,8 @@ public class TrafficSystem : MonoBehaviour
             {
                 Debug.LogWarning("-> [CONSOLE] Phát hiện xe vượt đèn đỏ qua TriggerZone!");
 
-                // Use Singleton to display bright red text on the home screen.
                 ShowNotification("VI PHẠM: Vượt đèn đỏ! Trừ 50 điểm", Color.red);
 
-                // Points will be deducted directly from the vehicle.
                 AdvancedCarController carScript = other.GetComponent<AdvancedCarController>();
                 if (carScript != null)
                 {
@@ -120,10 +119,11 @@ public class TrafficSystem : MonoBehaviour
         }
     }
 
-
-    // STANDARD NOTIFICATION DISPLAY FUNCTION - ABSOLUTELY NO CHARACTER SWALLOWING
     public void ShowNotification(string message, Color color)
     {
+        // ---Log the violation notification to the list for display after Game Over.
+        violationLog.Add("- " + message);
+
         if (warningText != null)
         {
             if (isCountdownRunning && lastMessage == message)
