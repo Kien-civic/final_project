@@ -1,13 +1,13 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI; // Added: Helps support basic UI elements
+using UnityEngine.UI;
 using TMPro;
 using System.Collections;
 
 public class AdvancedCarController : MonoBehaviour
 {
     [Header("UI Panels Settings")]
-    public GameObject finishPanel; // Frame containing the Winnings table (Finish)
+    public GameObject finishPanel;
 
     public enum GearState { P, R, N, D }
 
@@ -23,10 +23,12 @@ public class AdvancedCarController : MonoBehaviour
     public TextMeshProUGUI scoreText;
 
     [Header("Finish System")]
-    public TextMeshProUGUI finishUIText; // ONLY ONE RETAINED: The TextMeshProUGUI variable no longer has a duplicate name.
+    public TextMeshProUGUI finishUIText;
 
     [Header("Lose/Win UI")]
-    public GameObject restartButtonObject; // Drag and drop the Repeat or Lose Panel button.
+    public GameObject restartButtonObject; 
+    public GameObject losePanel;            // ---LosePanel Board 
+    public TextMeshProUGUI loseLogText;     // ---Drag TextMeshProUGUI component for the violation log display in the inspector
 
     [Header("Car Settings")]
     public float motorForce = 7000f;
@@ -46,19 +48,21 @@ public class AdvancedCarController : MonoBehaviour
     {
         lastPosition = transform.position;
         carRigidbody = GetComponent<Rigidbody>();
+
         if (restartButtonObject != null)
             restartButtonObject.SetActive(false);
 
+        if (losePanel != null)
+            losePanel.SetActive(false);
+
         Time.timeScale = 1f;
 
-        // EXTRACT THE CURRENT GAME INDEX AND SAVE IT TO THE DEVICE.
         int currentSceneIndex = UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex;
 
-        // Only save if the level index is greater than the LevelSelect and MainMenu
         if (currentSceneIndex >= 2)
         {
             PlayerPrefs.SetInt("SavedLevelIndex", currentSceneIndex);
-            PlayerPrefs.Save(); // Lock data to the device's hard drive.
+            PlayerPrefs.Save();
             Debug.Log("-> [BACKEND] Đã tự động lưu tiến trình chơi: Level Index " + currentSceneIndex);
         }
     }
@@ -78,16 +82,40 @@ public class AdvancedCarController : MonoBehaviour
         if (scoreText != null)
             scoreText.text = "Điểm: " + score.ToString();
 
+        // Handle Game Over when the score reaches zero
         if (score <= 0 && !isGameOver)
         {
             isGameOver = true;
             score = 0;
 
-            TrafficSystem traffic = FindObjectOfType<TrafficSystem>();
-            if (traffic != null && traffic.warningText != null)
+            // ---Turn on the LosePanel and display the violation log
+            if (losePanel != null)
             {
-                traffic.warningText.text = "GAME OVER: Bạn đã bị trừ hết điểm!";
-                traffic.warningText.color = Color.red;
+                losePanel.SetActive(true);
+            }
+
+            // ---Get list of violations from TrafficSystem and display them in loseLogText
+            TrafficSystem traffic = TrafficSystem.Instance != null ? TrafficSystem.Instance : FindObjectOfType<TrafficSystem>();
+            if (traffic != null)
+            {
+                if (traffic.warningText != null)
+                {
+                    traffic.warningText.text = "GAME OVER: Bạn đã bị trừ hết điểm!";
+                    traffic.warningText.color = Color.red;
+                }
+
+                if (loseLogText != null)
+                {
+                    if (traffic.violationLog.Count > 0)
+                    {
+                        loseLogText.text = "DANH SÁCH VI PHẠM:\n" + string.Join("\n", traffic.violationLog);
+                    }
+                    else
+                    {
+                        loseLogText.text = "DANH SÁCH VI PHẠM:\n- Hết điểm do va chạm giao thông!";
+                    }
+                    loseLogText.color = Color.red;
+                }
             }
 
             if (scoreText != null)
@@ -102,7 +130,6 @@ public class AdvancedCarController : MonoBehaviour
             Time.timeScale = 0f;
         }
 
-        // Speed display (meters moved since last frame -> m/s -> km/h)
         if (speedText != null)
         {
             float distanceMoved = Vector3.Distance(transform.position, lastPosition);
@@ -136,65 +163,46 @@ public class AdvancedCarController : MonoBehaviour
 
         switch (currentGear)
         {
-            // PARK
             case GearState.P:
                 motorInput = 0f;
                 brakeInput = brakeForce;
                 break;
 
-            // NEUTRAL
             case GearState.N:
                 motorInput = 0f;
-
-                if (isPressingBrake)
-                    brakeInput = brakeForce;
-
+                if (isPressingBrake) brakeInput = brakeForce;
                 break;
 
-            // DRIVE
             case GearState.D:
-
-                // W = đi tới
                 if (isPressingGas)
                 {
                     motorInput = motorForce;
                     brakeInput = 0f;
                 }
-
-                // S = phanh
                 if (isPressingBrake)
                 {
                     motorInput = 0f;
                     brakeInput = brakeForce;
                 }
-
                 break;
 
-            // REVERSE
             case GearState.R:
-
-                // W = lùi xe
                 if (isPressingGas)
                 {
                     motorInput = -motorForce;
                     brakeInput = 0f;
                 }
-
-                // S = phanh
                 if (isPressingBrake)
                 {
                     motorInput = 0f;
                     brakeInput = brakeForce;
                 }
-
                 break;
         }
 
-        // Power is only transmitted to the rear wheel.
         rearLeftWheel.motorTorque = motorInput;
         rearRightWheel.motorTorque = motorInput;
 
-        // Brakes on all four wheels
         frontLeftWheel.brakeTorque = brakeInput;
         frontRightWheel.brakeTorque = brakeInput;
         rearLeftWheel.brakeTorque = brakeInput;
@@ -223,7 +231,6 @@ public class AdvancedCarController : MonoBehaviour
         else if (currentGear == GearState.R) currentGear = GearState.P;
     }
 
-    // Trigger for finish
     void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Finish"))
@@ -245,8 +252,6 @@ public class AdvancedCarController : MonoBehaviour
             Time.timeScale = 0f;
         }
     }
-
-    // --- FUNCTIONS FOR BUTTON CLICKS ---
 
     public void ClickRepeat()
     {
